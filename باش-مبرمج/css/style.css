@@ -1,0 +1,383 @@
+:root{
+  --bg:#0B1220;
+  --bg-soft:#101A2E;
+  --panel:#15213A;
+  --panel-2:#1B2A47;
+  --line:rgba(255,255,255,.08);
+  --ink:#EAF0FB;
+  --ink-dim:#93A4C4;
+  --accent:#33E0C2;
+  --accent-2:#FFB94D;
+  --accent-3:#FF6E8F;
+  --accent-4:#7C9CFF;
+  --cream:#FBF6EC;
+  --radius:20px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+html,body{height:100%;}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 100% -10%, #16233f 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #12213a 0%, transparent 55%),
+    var(--bg);
+  color:var(--ink);
+  font-family:'Tajawal',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.mono{font-family:'IBM Plex Mono',monospace;}
+::selection{background:var(--accent); color:#04231d;}
+
+/* ---------- App shell ---------- */
+#app{max-width:560px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(78px + var(--safe-b));}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  padding:calc(14px + var(--safe-t)) 18px 12px;
+  display:flex; align-items:center; gap:12px;
+  background:linear-gradient(180deg, rgba(11,18,32,.97) 70%, rgba(11,18,32,0));
+  backdrop-filter:blur(6px);
+}
+.back-btn{
+  width:38px; height:38px; border-radius:12px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex:none; font-size:18px;
+}
+.topbar h1{font-size:16px; margin:0; font-weight:800; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.topbar .sub{font-size:11px; color:var(--ink-dim); font-weight:500;}
+
+/* ---------- Screens ---------- */
+.screen{display:none; padding:0 18px 20px;}
+.screen.active{display:block; animation:fade .25s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
+
+/* ---------- HOME ---------- */
+.hero{
+  margin-top:6px; padding:22px 20px 24px; border-radius:24px; position:relative; overflow:hidden;
+  background: linear-gradient(135deg, #123024 0%, #0e2a3a 55%, #0B1220 100%);
+  border:1px solid var(--line);
+}
+.hero::after{
+  content:""; position:absolute; inset:0;
+  background-image: radial-gradient(circle, rgba(51,224,194,.35) 1px, transparent 1px);
+  background-size:16px 16px; opacity:.25; mix-blend-mode:screen;
+}
+.hero-eyebrow{position:relative; font-family:'IBM Plex Mono',monospace; letter-spacing:.14em; font-size:11px; color:var(--accent); text-transform:uppercase; font-weight:600;}
+.hero h2{position:relative; font-size:25px; margin:8px 0 6px; font-weight:900; line-height:1.35;}
+.hero p{position:relative; margin:0 0 16px; color:var(--ink-dim); font-size:13.5px; line-height:1.8;}
+.hero-stats{position:relative; display:flex; gap:10px;}
+.hstat{flex:1; background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:14px; padding:10px 8px; text-align:center;}
+.hstat b{display:block; font-size:18px; font-family:'IBM Plex Mono',monospace; color:var(--accent-2);}
+.hstat span{font-size:10.5px; color:var(--ink-dim);}
+
+.section-label{display:flex; align-items:center; justify-content:space-between; margin:26px 2px 12px;}
+.section-label h3{font-size:15px; margin:0; font-weight:800;}
+.section-label span{font-size:11px; color:var(--ink-dim);}
+
+.unit-grid{display:flex; flex-direction:column; gap:10px;}
+.unit-card{
+  display:flex; align-items:center; gap:14px; padding:14px; border-radius:18px;
+  background:var(--panel); border:1px solid var(--line); cursor:pointer; position:relative; overflow:hidden;
+  transition:transform .15s ease, border-color .15s ease;
+}
+.unit-card:active{transform:scale(.98);}
+.unit-card .num{
+  width:46px; height:46px; border-radius:13px; flex:none; display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:15px; color:#04231d;
+}
+.unit-card .meta{flex:1; min-width:0;}
+.unit-card .meta h4{margin:0 0 3px; font-size:14.5px; font-weight:800;}
+.unit-card .meta p{margin:0; font-size:11.5px; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.unit-card .prog-ring{flex:none; position:relative; width:34px; height:34px;}
+.unit-card .prog-ring svg{transform:rotate(-90deg);}
+.unit-card .chev{color:var(--ink-dim); font-size:14px;}
+
+/* ---------- UNIT screen (lesson list) ---------- */
+.unit-hero{border-radius:20px; padding:18px; margin-top:4px; border:1px solid var(--line);}
+.unit-hero p{margin:8px 0 0; font-size:13px; color:var(--ink-dim); line-height:1.8;}
+.lesson-list{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
+.lesson-item{
+  display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:var(--panel);
+  border:1px solid var(--line); cursor:pointer;
+}
+.lesson-item .lnum{
+  width:32px; height:32px; border-radius:10px; background:var(--panel-2); flex:none;
+  display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--accent);
+}
+.lesson-item h5{margin:0; font-size:13.5px; font-weight:700; flex:1;}
+.lesson-item .tick{width:20px; height:20px; border-radius:50%; border:1.5px solid var(--line); flex:none;}
+.lesson-item .tick.done{background:var(--accent); border-color:var(--accent); display:flex; align-items:center; justify-content:center; color:#04231d; font-size:12px; font-weight:900;}
+
+/* ---------- LESSON screen ---------- */
+.progressbar{height:4px; background:var(--panel); border-radius:3px; overflow:hidden; margin:0 0 16px;}
+.progressbar i{display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-4)); border-radius:3px; transition:width .3s;}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:14px;}
+.card-tag{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; padding:5px 10px; border-radius:20px; margin-bottom:12px;}
+.card h4{margin:0 0 10px; font-size:15.5px; font-weight:800; line-height:1.5;}
+.card p, .card li{font-size:13.5px; line-height:1.9; color:#D7E1F5;}
+.card ul{margin:0; padding-inline-start:20px;}
+.card li{margin-bottom:8px;}
+.card li::marker{color:var(--accent);}
+.card b{color:var(--accent-2); font-weight:800;}
+
+.tag-goal{background:rgba(124,156,255,.14); color:#A9BEFF;}
+.tag-concept{background:rgba(51,224,194,.14); color:var(--accent);}
+.tag-term{background:rgba(255,185,77,.14); color:var(--accent-2);}
+.tag-example{background:rgba(255,110,143,.14); color:var(--accent-3);}
+.tag-remember{background:rgba(124,156,255,.14); color:#A9BEFF;}
+
+.term-box{background:var(--panel-2); border-radius:14px; padding:12px 14px; margin-top:10px; border-inline-start:3px solid var(--accent-2);}
+.term-box b{display:block; color:var(--accent-2); font-size:13px; margin-bottom:3px;}
+.term-box span{font-size:12.5px; color:var(--ink-dim); line-height:1.7;}
+
+.example-box{background:linear-gradient(135deg, rgba(255,110,143,.09), rgba(255,110,143,.02)); border:1px dashed rgba(255,110,143,.35); border-radius:14px; padding:14px;}
+
+/* flip mini-cards for terms */
+.flip-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;}
+.flip{perspective:800px; height:96px;}
+.flip-inner{position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer;}
+.flip.on .flip-inner{transform:rotateY(180deg);}
+.flip-face{position:absolute; inset:0; backface-visibility:hidden; border-radius:12px; padding:10px; display:flex; align-items:center; justify-content:center; text-align:center;}
+.flip-front{background:var(--panel-2); border:1px solid var(--line); font-weight:800; font-size:12.5px;}
+.flip-back{background:rgba(51,224,194,.12); border:1px solid rgba(51,224,194,.4); transform:rotateY(180deg); font-size:11px; color:#CFEFEA; line-height:1.6;}
+
+/* quiz */
+.quiz-q{font-size:14px; font-weight:700; margin-bottom:12px; line-height:1.7;}
+.opt{
+  display:block; width:100%; text-align:right; background:var(--panel-2); border:1px solid var(--line);
+  color:var(--ink); padding:11px 14px; border-radius:12px; margin-bottom:8px; font-size:13px; cursor:pointer; font-family:inherit;
+}
+.opt.correct{background:rgba(51,224,194,.18); border-color:var(--accent); color:#B9FBEF;}
+.opt.wrong{background:rgba(255,110,143,.16); border-color:var(--accent-3); color:#FFD4DE;}
+.opt:disabled{cursor:default;}
+.quiz-explain{display:none; margin-top:8px; padding:10px 12px; background:var(--panel); border-radius:10px; font-size:12px; color:var(--ink-dim); line-height:1.7; border-inline-start:3px solid var(--accent-4);}
+.quiz-explain.show{display:block;}
+
+.nav-btns{display:flex; gap:10px; margin-top:6px;}
+.btn{flex:1; padding:14px; border-radius:14px; border:none; font-family:'Tajawal'; font-weight:800; font-size:13.5px; cursor:pointer;}
+.btn-primary{background:linear-gradient(120deg,var(--accent),#22c6ab); color:#04231d;}
+.btn-ghost{background:var(--panel); color:var(--ink); border:1px solid var(--line);}
+
+/* completion */
+.done-badge{text-align:center; padding:26px 10px;}
+.done-badge .ico{font-size:44px;}
+.done-badge h4{margin:10px 0 6px; font-size:17px;}
+.done-badge p{color:var(--ink-dim); font-size:12.5px;}
+
+/* ---------- Bottom nav ---------- */
+.tabbar{
+  position:fixed; bottom:0; inset-inline:0; z-index:50;
+  max-width:560px; margin:0 auto;
+  background:rgba(16,26,46,.92); backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  display:flex; padding:8px 6px calc(8px + var(--safe-b));
+}
+.tab{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px; border:none; background:none; color:var(--ink-dim); font-family:'Tajawal'; cursor:pointer;}
+.tab.active{color:var(--accent);}
+.tab .ic{font-size:19px;}
+.tab .lb{font-size:10px; font-weight:700;}
+
+/* Glossary */
+.search-wrap{position:relative; margin-bottom:16px;}
+.search-wrap input{
+  width:100%; padding:13px 44px 13px 14px; border-radius:14px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); font-family:'Tajawal'; font-size:13.5px;
+}
+.search-wrap span{position:absolute; inset-inline-end:14px; top:50%; transform:translateY(-50%); color:var(--ink-dim);}
+.gloss-item{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:8px;}
+.gloss-item b{color:var(--accent); font-size:13px; display:block; margin-bottom:3px;}
+.gloss-item span{font-size:12px; color:var(--ink-dim); line-height:1.7;}
+
+/* profile / progress screen */
+.ring-big{width:130px; height:130px; margin:10px auto 6px; position:relative;}
+.ring-big svg{transform:rotate(-90deg);}
+.ring-big .val{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column;}
+.ring-big .val b{font-size:26px; font-family:'IBM Plex Mono',monospace; color:var(--accent);}
+.ring-big .val span{font-size:10px; color:var(--ink-dim);}
+.mini-stat-row{display:flex; gap:10px; margin-top:16px;}
+.mini-stat{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px; text-align:center;}
+.mini-stat b{display:block; font-size:20px; font-family:'IBM Plex Mono',monospace; color:var(--accent-2);}
+.mini-stat span{font-size:10.5px; color:var(--ink-dim);}
+.reset-btn{width:100%; margin-top:20px; padding:12px; border-radius:12px; background:rgba(255,110,143,.12); border:1px solid rgba(255,110,143,.3); color:#FFB6C4; font-family:'Tajawal'; font-weight:700; font-size:12.5px; cursor:pointer;}
+
+/* ---------- قفل الوحدات ---------- */
+.unit-card.locked{opacity:.55; cursor:pointer;}
+.unit-card.locked:active{transform:scale(.98);}
+.lock-ic{font-size:18px; flex:none; color:var(--ink-dim);}
+.badge-ok{display:inline-block; font-size:9.5px; font-weight:800; color:#04231d; background:var(--accent); border-radius:8px; padding:2px 6px; margin-right:4px; vertical-align:middle;}
+
+/* ---------- زر تأكيد الإجابة (يمنع الضغط بالخطأ) ---------- */
+.opt.selected{border-color:var(--accent-4); background:rgba(124,156,255,.14); box-shadow:0 0 0 1px var(--accent-4) inset;}
+.btn-confirm{
+  display:block; width:100%; margin-top:2px; padding:11px; border-radius:12px; border:none;
+  background:linear-gradient(120deg,var(--accent-4),#5f7fe0); color:#fff; font-family:'Tajawal'; font-weight:800; font-size:12.5px; cursor:pointer;
+}
+.btn-confirm:disabled{background:var(--panel-2); color:var(--ink-dim); cursor:not-allowed;}
+
+/* ---------- بطاقة الاختبار الشامل داخل شاشة الوحدة ---------- */
+.ft-card p{font-size:12.5px;}
+.ft-checklist{display:flex; flex-direction:column; gap:6px; margin:10px 0;}
+.ft-item{font-size:12px; color:var(--ink-dim); background:var(--panel-2); border-radius:10px; padding:8px 10px;}
+.ft-item.ok{color:var(--accent);}
+.ft-result{margin-top:10px; font-size:12.5px; padding:10px 12px; border-radius:10px;}
+.ft-result.ft-pass{background:rgba(51,224,194,.14); color:#B9FBEF; border:1px solid rgba(51,224,194,.3);}
+.ft-result.ft-fail{background:rgba(255,110,143,.12); color:#FFD4DE; border:1px solid rgba(255,110,143,.3);}
+
+/* ---------- شاشة الاختبار الشامل ---------- */
+.ft-intro p{font-size:12.5px; line-height:1.8; color:var(--ink-dim);}
+.test-timer{
+  display:inline-block; background:var(--panel-2); border:1px solid var(--line); border-radius:12px;
+  padding:8px 16px; font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:var(--ink);
+}
+.test-timer.timer-warn{color:var(--accent-2); border-color:var(--accent-2); animation:pulseWarn 1s infinite;}
+.test-timer.timer-expired{color:var(--accent-3); border-color:var(--accent-3);}
+@keyframes pulseWarn{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
+
+/* ---------- حقوق الملكية ---------- */
+.copyright{text-align:center; font-size:10.5px; color:var(--ink-dim); opacity:.7; margin:22px 0 4px;}
+
+/* ---------- تبويب الترم ---------- */
+.term-toggle{display:flex; gap:8px; margin:18px 0 6px; background:var(--panel-2); border-radius:14px; padding:4px;}
+.term-btn{flex:1; border:none; background:transparent; color:var(--ink-dim); font-family:'Tajawal'; font-weight:700; font-size:12.5px; padding:9px 6px; border-radius:11px; cursor:pointer;}
+.term-btn.active{background:var(--panel); color:var(--ink); box-shadow:0 2px 6px rgba(0,0,0,.25);}
+
+/* ---------- كارت المستخدم ---------- */
+.user-card{padding:14px 16px;}
+.user-row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.user-row #profGreeting{font-weight:800; font-size:14px;}
+.edit-name-btn{background:var(--panel-2); border:none; color:var(--ink-dim); font-family:'Tajawal'; font-size:11.5px; padding:7px 12px; border-radius:10px; cursor:pointer; flex:none;}
+
+/* ---------- مودال اسم المستخدم ---------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(8,10,18,.72); backdrop-filter:blur(3px);
+  display:none; align-items:center; justify-content:center; z-index:999; padding:20px;
+}
+.modal-box{
+  background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:22px 20px; max-width:340px; width:100%;
+  text-align:center;
+}
+.modal-box h3{margin:0 0 6px; font-size:17px;}
+.modal-box p{margin:0 0 14px; font-size:12px; color:var(--ink-dim); line-height:1.8;}
+.modal-box input{
+  width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--panel-2);
+  color:var(--ink); font-family:'Tajawal'; font-size:13.5px; text-align:center;
+}
+
+/* ---------- ملاحظة طريقة الحل قبل إكمال الفراغ ---------- */
+.fill-hint{
+  background:rgba(255,185,77,.10); border:1px solid rgba(255,185,77,.25); color:var(--accent-2);
+  font-size:11.5px; line-height:1.8; padding:9px 12px; border-radius:10px; margin-bottom:8px;
+}
+.ft-item.soft{background:transparent; color:var(--ink-dim); font-size:11px; padding:4px 2px;}
+
+/* ---------- قائمة الامتحانات ---------- */
+.exams-intro p{font-size:12.5px; line-height:1.8; color:var(--ink-dim);}
+.exam-card{
+  display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--line);
+  border-radius:16px; padding:14px; margin-bottom:10px; cursor:pointer; flex-wrap:wrap;
+}
+.exam-card .exnum{
+  width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,var(--accent-3),#b3405a);
+  color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; flex:none;
+}
+.exam-card .exmeta{flex:1; min-width:120px;}
+.exam-card .exmeta h4{margin:0 0 3px; font-size:13.5px;}
+.exam-card .exmeta p{margin:0; font-size:11px; color:var(--ink-dim);}
+.exam-card .exbadge{font-size:20px; flex:none;}
+.exam-print-btn{
+  flex:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px;
+  width:34px; height:34px; font-size:14px; cursor:pointer; color:var(--ink);
+}
+
+/* ---------- رفع صورة/PDF ورقة الحل (تسليم ورقي) ---------- */
+.paper-upload-label{display:block; font-size:11.5px; color:var(--ink-dim); margin:10px 0 6px;}
+#paperPhotoInput{
+  width:100%; padding:9px; border-radius:10px; border:1px solid var(--line); background:var(--panel-2);
+  color:var(--ink); font-family:'Tajawal'; font-size:11.5px;
+}
+#paperPhotoPreview img{max-width:100%; border-radius:10px; margin-top:8px;}
+
+.pdf-preview-wrap{width:100%; height:420px; border-radius:12px; overflow:hidden; border:1px solid var(--line); background:#fff;}
+.pdf-preview-wrap iframe{width:100%; height:100%; border:none;}
+
+/* ---------- شبكة الجوائز ---------- */
+.badges-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+.badge-cell{
+  display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 4px; border-radius:12px;
+  background:var(--panel-2); opacity:.4;
+}
+.badge-cell.unlocked{opacity:1; background:linear-gradient(160deg, rgba(255,185,77,.16), rgba(255,185,77,.04));}
+.badge-cell .bic{font-size:22px;}
+.badge-cell .blb{font-size:9.5px; color:var(--ink-dim); text-align:center; line-height:1.3;}
+.badge-cell.unlocked .blb{color:var(--ink);}
+
+/* ---------- كارت الشهادة في صفحة تقدّمي ---------- */
+.cert-teaser{display:flex; align-items:center; gap:12px; cursor:pointer;}
+.cert-teaser-icon{font-size:30px; flex:none; width:52px; height:52px; border-radius:14px; background:var(--panel-2); display:flex; align-items:center; justify-content:center;}
+.cert-teaser-meta{flex:1; min-width:0;}
+.cert-teaser-meta h4{margin:0 0 3px; font-size:13.5px;}
+.cert-teaser-meta p{margin:0; font-size:11px; color:var(--ink-dim);}
+.cert-teaser-arrow{font-size:20px; color:var(--ink-dim); flex:none;}
+
+/* ---------- شاشة الشهادة ---------- */
+.cert-tier-switcher{display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:4px;}
+.cert-pill{
+  flex:none; white-space:nowrap; background:var(--panel-2); border:1px solid var(--line); color:var(--ink-dim);
+  font-family:'Tajawal'; font-size:11.5px; font-weight:700; padding:8px 14px; border-radius:20px; cursor:pointer;
+}
+.cert-pill.active{background:var(--accent); color:#04231d; border-color:var(--accent);}
+.cert-canvas-wrap{width:100%; overflow-x:auto; border-radius:16px; background:#0d0d0d; padding:6px;}
+.cert-canvas-wrap canvas{width:100%; height:auto; display:block; border-radius:12px;}
+.cert-tier-item{display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:8px;}
+.cert-tier-item .cti-icon{font-size:22px; flex:none; width:36px; text-align:center;}
+.cert-tier-item .cti-meta{flex:1; min-width:0;}
+.cert-tier-item .cti-meta b{display:block; font-size:12.5px;}
+.cert-tier-item .cti-meta span{font-size:10.5px; color:var(--ink-dim);}
+.cert-tier-item.reached{border-color:var(--accent); background:rgba(51,224,194,.06);}
+
+#certActions.nav-btns{flex-wrap:wrap;}
+#certActions .btn{min-width:96px; padding:12px 8px; font-size:12px;}
+
+/* ---------- رابط دخول الأدمن ---------- */
+.admin-entry{
+  text-align:center; font-size:11px; color:var(--ink-dim); opacity:.55; margin:10px 0 26px;
+  cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+}
+.student-id-lbl{font-size:10.5px; color:var(--ink-dim); font-family:'IBM Plex Mono',monospace; margin-top:4px;}
+
+/* ---------- لوحة تحكم الأدمن ---------- */
+.admin-student-card{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px;
+  display:flex; flex-direction:column; gap:8px;
+}
+.admin-student-card .asc-meta b{font-size:13px;}
+.admin-student-card .asc-meta span{display:block; font-size:10.5px; color:var(--ink-dim); margin-top:2px; font-family:'IBM Plex Mono',monospace;}
+.admin-student-card .asc-bar{height:6px; background:var(--panel-2); border-radius:6px; overflow:hidden; margin:6px 0;}
+.admin-student-card .asc-bar i{display:block; height:100%; background:var(--accent);}
+.admin-student-card .asc-actions{display:flex; gap:6px;}
+.admin-student-card .asc-actions button{
+  flex:1; padding:8px 4px; border-radius:9px; border:none; background:var(--panel-2); color:var(--ink);
+  font-family:'Tajawal'; font-size:11px; font-weight:700; cursor:pointer;
+}
+.admin-student-card .asc-actions button.danger{background:rgba(255,110,143,.14); color:var(--accent-3);}
+
+/* ---------- روابط الفيديو والمحاضرات ---------- */
+.lesson-links{display:flex; flex-wrap:wrap; gap:8px;}
+.lesson-link-btn{
+  display:flex; align-items:center; gap:6px; background:var(--panel-2); border:1px solid var(--line);
+  border-radius:12px; padding:9px 14px; font-size:12.5px; color:var(--ink); text-decoration:none; font-weight:700;
+}
+.lesson-link-btn:active{transform:scale(.96);}
+
+.toast{
+  position:fixed; bottom:calc(90px + var(--safe-b)); left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--panel-2); border:1px solid var(--accent); color:var(--ink); padding:10px 18px; border-radius:30px;
+  font-size:12.5px; font-weight:700; z-index:80; opacity:0; transition:all .3s; pointer-events:none;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+@media (min-width:560px){ #app{border-inline:1px solid var(--line);} }

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>باش مبرمج | ملخص تفاعلي - المعلومات وتكنولوجيا الاتصالات</title>
+
+<!-- PWA: قابلية التثبيت على الويب / أندرويد / iOS / ويندوز -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#141414">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="باش مبرمج">
+<link rel="icon" href="icons/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <button class="back-btn" id="backBtn" style="display:none" onclick="goBack()">›</button>
+    <div style="flex:1; min-width:0;">
+      <h1 id="topTitle">باش مبرمج</h1>
+      <div class="sub" id="topSub">ملخص تفاعلي لمنهج المعلومات وتكنولوجيا الاتصالات</div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="hero">
+      <div class="hero-eyebrow">// الصف الأول الثانوي — البرمجة والذكاء الاصطناعي</div>
+      <h2>باش مبرمج<br>ملخصك التفاعلي لمادة تكنولوجيا المعلومات</h2>
+      <p>13 وحدة، من مفهوم المعلومات إلى الذكاء الاصطناعي التوليدي وبرمجة الويب — بطاقات مركّزة، أمثلة واقعية، واختبارات فورية تناسب موبايلك.</p>
+      <div class="hero-stats">
+        <div class="hstat"><b id="statUnits">13</b><span>وحدة</span></div>
+        <div class="hstat"><b id="statLessons">0</b><span>درس منجز</span></div>
+        <div class="hstat"><b id="statPct">0%</b><span>نسبة الإنجاز</span></div>
+      </div>
+    </div>
+
+    <div class="term-toggle">
+      <button class="term-btn active" data-term="1" onclick="switchTerm(1)">📗 الترم الأول</button>
+      <button class="term-btn" data-term="2" onclick="switchTerm(2)">📘 الترم الثاني</button>
+    </div>
+
+    <div id="term1Content">
+      <div class="section-label"><h3>الوحدات الدراسية</h3><span id="unitCountLbl"></span></div>
+      <div class="unit-grid" id="unitGrid"></div>
+    </div>
+
+    <div id="term2Placeholder" style="display:none;">
+      <div class="card" style="text-align:center; padding:34px 20px;">
+        <div style="font-size:40px; margin-bottom:10px;">🚧</div>
+        <h4 style="margin:0 0 6px;">محتوى الترم الثاني قريبًا</h4>
+        <p style="color:var(--ink-dim); font-size:12.5px; margin:0;">هنضيف وحدات الترم الثاني هنا أول ما تكون جاهزة — التطبيق بالفعل مجهّز لعرضها تلقائيًا فور إضافتها.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNIT -->
+  <div class="screen" id="screen-unit">
+    <div class="unit-hero" id="unitHeroBox"></div>
+    <div class="lesson-list" id="lessonList"></div>
+  </div>
+
+  <!-- LESSON -->
+  <div class="screen" id="screen-lesson">
+    <div class="progressbar"><i id="lessonProg" style="width:0%"></i></div>
+    <div id="lessonBody"></div>
+  </div>
+
+  <!-- GLOSSARY -->
+  <div class="screen" id="screen-glossary">
+    <div class="search-wrap">
+      <input id="glossSearch" type="text" placeholder="ابحث عن مصطلح… (مثال: بروتوكول، خوارزمية)">
+      <span>🔎</span>
+    </div>
+    <button class="btn btn-ghost" style="width:100%; margin-bottom:10px;" onclick="printGlossaryPDF()">🖨️ طباعة/تصدير كل المصطلحات PDF</button>
+    <div id="glossList"></div>
+  </div>
+
+  <!-- EXAMS LIST -->
+  <div class="screen" id="screen-exams">
+    <div class="card exams-intro">
+      <span class="card-tag" style="background:rgba(255,110,143,.14); color:var(--accent-3);">🏁 امتحانات المراجعة النهائية</span>
+      <p style="margin:0;">5 امتحانات مختلفة، كل امتحان 100 سؤال يغطي كل الوحدات الـ13، وأصعب شوية من اختبارات الوحدات — للمراجعة الشاملة قبل الامتحان الحقيقي. سجّل 90% أو أكثر في أي امتحان عشان تفتح جائزته 🏆.</p>
+    </div>
+    <div id="examList"></div>
+  </div>
+
+  <!-- EXAM TEST -->
+  <div class="screen" id="screen-examtest">
+    <div class="progressbar"><i id="examProg" style="width:0%"></i></div>
+    <div id="examBody"></div>
+  </div>
+
+  <!-- CERTIFICATE -->
+  <div class="screen" id="screen-certificate">
+    <div id="certTierSwitcher" class="cert-tier-switcher" style="display:none;"></div>
+    <div class="cert-canvas-wrap">
+      <canvas id="certCanvas" width="1000" height="800"></canvas>
+    </div>
+    <div id="certLockedMsg" class="card" style="display:none; text-align:center;">
+      <div style="font-size:36px; margin-bottom:8px;">🔒</div>
+      <h4 style="margin:0 0 6px;">لسه معندكش شهادة</h4>
+      <p style="color:var(--ink-dim); font-size:12.5px; margin:0;">حل أي اختبار وحدة شامل أو امتحان من الامتحانات الخمسة عشان تفتح أول شهادة ليك، وكل ما نتيجتك تحسّن هيترقّى مركزك تلقائيًا.</p>
+    </div>
+    <div class="nav-btns" id="certActions" style="margin-top:14px; flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="downloadCertificate()">📥 تحميل PNG</button>
+      <button class="btn btn-ghost" onclick="downloadCertificatePDF()">📄 تحميل PDF</button>
+      <button class="btn btn-ghost" onclick="printCertificate()">🖨️ طباعة</button>
+      <button class="btn btn-primary" onclick="shareCertificateImg()">📤 مشاركة</button>
+    </div>
+    <div class="section-label"><h3>كل المراكز والشهادات</h3></div>
+    <div id="certTiersList"></div>
+
+    <div class="section-label"><h3>عرض ملف جوائز (PDF)</h3></div>
+    <div class="card">
+      <p style="margin:0 0 12px; font-size:12px; color:var(--ink-dim); line-height:1.8;">
+        استلمت ملف جوائز حد تاني (اللي بيتصدّر من زرار "تصدير الجوائز والشهادة") وعايز تشوفه؟ حطّه هنا.
+      </p>
+      <input type="file" id="viewAchFile" accept="application/pdf" style="display:none" onchange="viewAchievementsFile(this)">
+      <button class="btn btn-ghost" style="width:100%;" onclick="document.getElementById('viewAchFile').click()">📂 اختر ملف جوائز (PDF) لعرضه</button>
+    </div>
+    <div id="viewedAchWrap"></div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div class="screen" id="screen-admin">
+    <div id="adminBody"></div>
+  </div>
+
+  <!-- FINAL TEST -->
+  <div class="screen" id="screen-finaltest">
+    <div class="progressbar"><i id="finalTestProg" style="width:0%"></i></div>
+    <div id="finalTestBody"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="screen" id="screen-profile">
+    <div class="card user-card">
+      <div class="user-row">
+        <span id="profGreeting">أهلًا بيك 👋</span>
+        <button class="edit-name-btn" onclick="openNameModal()">✏️ تعديل الاسم</button>
+      </div>
+      <div id="profStudentId" class="student-id-lbl"></div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="ring-big">
+        <svg width="130" height="130">
+          <circle cx="65" cy="65" r="56" stroke="var(--panel-2)" stroke-width="10" fill="none"/>
+          <circle id="profRing" cx="65" cy="65" r="56" stroke="var(--accent)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/>
+        </svg>
+        <div class="val"><b id="profPct">0%</b><span>مكتمل</span></div>
+      </div>
+      <h4 style="margin:6px 0 2px; font-size:15px;">رحلتك في الكتاب</h4>
+      <p style="color:var(--ink-dim); font-size:12px; margin:0;">استمر لإكمال كل الوحدات وفتح شارة الخبير 🏆</p>
+      <div class="mini-stat-row">
+        <div class="mini-stat"><b id="profDone">0</b><span>دروس مكتملة</span></div>
+        <div class="mini-stat"><b id="profQuiz">0</b><span>إجابات صحيحة</span></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%; margin-top:14px;" onclick="shareProgress()">📤 شارك تقدّمك</button>
+    </div>
+    <div class="section-label"><h3>🎓 شهادتك ومركزك</h3></div>
+    <div class="card cert-teaser" id="certTeaser" onclick="openCertificateScreen()">
+      <div class="cert-teaser-icon" id="certTeaserIcon">🔒</div>
+      <div class="cert-teaser-meta">
+        <h4 id="certTeaserTitle">لسه محققتش أي مركز</h4>
+        <p id="certTeaserSub">حل أي اختبار أو امتحان عشان تفتح أول شهادة ليك</p>
+      </div>
+      <div class="cert-teaser-arrow">‹</div>
+    </div>
+
+    <div class="section-label"><h3>سجل الوحدات</h3></div>
+    <div id="profUnitList" class="unit-grid"></div>
+
+    <div class="section-label"><h3>🏆 الجوائز</h3></div>
+    <div class="card">
+      <p style="margin:0 0 10px; font-size:12px; color:var(--ink-dim);">جائزة "وحدة بلا أخطاء" لما تنهي اختبار الوحدة الشامل بـ100%، وجائزة امتحان لما تسجّل 90% أو أكثر فيه.</p>
+      <div id="badgesGrid" class="badges-grid"></div>
+      <button class="btn btn-ghost" style="width:100%; margin-top:12px;" onclick="exportAchievementsPDF()">📄 تصدير الجوائز والشهادة (PDF)</button>
+    </div>
+
+    <div class="section-label"><h3>تثبيت التطبيق</h3></div>
+    <div class="card" style="display:flex; align-items:center; gap:12px;">
+      <div style="font-size:26px; flex:none;">📲</div>
+      <div style="flex:1; font-size:12px; color:var(--ink-dim); line-height:1.7;">
+        ثبّت "باش مبرمج" كتطبيق على جهازك (أندرويد، iOS، ويندوز) واستخدمه حتى بدون إنترنت.
+      </div>
+      <button class="btn btn-ghost" id="installBtn" style="flex:none;" onclick="triggerInstall()">تثبيت</button>
+    </div>
+
+    <div class="section-label"><h3>النسخة الاحتياطية</h3></div>
+    <div class="card">
+      <p style="margin:0 0 12px; font-size:12.5px; color:var(--ink-dim); line-height:1.8;">
+        تقدّمك محفوظ تلقائيًا، لكن لو محتاج تضمن عدم فقدانه (مثلًا عند مسح ذاكرة المتصفح أو تغيير الجهاز)،
+        صدّر نسخة احتياطية بصيغة ملف JSON، واستوردها وقتما تحتاج للرجوع لها.
+      </p>
+      <div class="nav-btns" style="margin:0;">
+        <button class="btn btn-ghost" onclick="exportProgress()">📤 تصدير نسخة احتياطية</button>
+        <button class="btn btn-ghost" onclick="triggerImport()">📥 استيراد نسخة</button>
+      </div>
+      <input type="file" id="importFileInput" accept="application/json" style="display:none" onchange="importProgress(this)">
+    </div>
+
+    <button class="reset-btn" onclick="resetProgress()">إعادة ضبط التقدّم</button>
+
+    <div class="copyright">© 2026 Ahmed Rami — جميع الحقوق محفوظة</div>
+    <div class="admin-entry" onclick="openAdminGate()">🔐 لوحة تحكم الأدمن</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="nameModal" style="display:none;">
+  <div class="modal-box">
+    <div style="font-size:34px; text-align:center; margin-bottom:6px;">👋</div>
+    <h3>إيه اسمك؟</h3>
+    <p>هيظهر اسمك بس لما تشارك تقدّمك مع حد — مفيش تسجيل دخول ولا باسورد.</p>
+    <input type="text" id="nameInput" placeholder="اكتب اسمك هنا…" maxlength="30">
+    <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="saveUserName()">تمام، ابدأ 🚀</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="updateModal" style="display:none;">
+  <div class="modal-box">
+    <div style="font-size:34px; text-align:center; margin-bottom:6px;">🔄</div>
+    <h3>في تحديث جديد بالمنصة!</h3>
+    <p>ضفنا تحسينات أو محتوى جديد. عشان تفضل بياناتك آمنة تمامًا، ياريت تاخد نسخة احتياطية من تقدمك دلوقتي قبل ما تكمل.</p>
+    <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="backupThenCloseUpdateModal()">📤 تصدير نسخة احتياطية الآن</button>
+    <button class="btn btn-ghost" style="width:100%; margin-top:8px;" onclick="closeUpdateModal()">تجاهل والمتابعة</button>
+  </div>
+</div>
+
+<div class="tabbar">
+  <button class="tab active" data-tab="home" onclick="showTab('home')"><span class="ic">🏠</span><span class="lb">الرئيسية</span></button>
+  <button class="tab" data-tab="glossary" onclick="showTab('glossary')"><span class="ic">📖</span><span class="lb">المصطلحات</span></button>
+  <button class="tab" data-tab="exams" onclick="showTab('exams')"><span class="ic">🏁</span><span class="lb">امتحانات</span></button>
+  <button class="tab" data-tab="profile" onclick="showTab('profile')"><span class="ic">📊</span><span class="lb">تقدّمي</span></button>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/glossary.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="js/certificates.js"></script>
+<script src="js/app.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>
