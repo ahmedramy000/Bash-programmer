@@ -1,8 +1,8 @@
-// باش مبرمج — Service Worker
+// علوم البرمجة — Service Worker
 // يخزّن ملفات التطبيق الأساسية محليًا عشان يشتغل بدون إنترنت ويكون قابل للتثبيت كتطبيق.
 // © Ahmed Rami
 
-const CACHE_NAME = 'zakera-raqmeya-v4';
+const CACHE_NAME = 'zakera-raqmeya-v5';
 const APP_SHELL = [
   './',
   './index.html',
