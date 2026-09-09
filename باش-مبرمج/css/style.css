@@ -241,6 +241,63 @@ body{
 .copyright{text-align:center; font-size:10.5px; color:var(--ink-dim); opacity:.7; margin:22px 0 4px;}
 
 /* ---------- تبويب الترم ---------- */
+/* ---------- بانر جروب الواتساب ---------- */
+.wa-banner{
+  display:flex; align-items:center; gap:12px; cursor:pointer;
+  background:linear-gradient(120deg, rgba(37,211,102,.16), rgba(37,211,102,.05));
+  border:1px solid rgba(37,211,102,.35); margin-top:14px;
+}
+.wa-banner-ic{font-size:26px; flex:none; width:46px; height:46px; border-radius:12px; background:rgba(37,211,102,.18); display:flex; align-items:center; justify-content:center;}
+.wa-banner-meta{flex:1; min-width:0;}
+.wa-banner-meta b{display:block; font-size:13px; color:#fff;}
+.wa-banner-meta span{font-size:11px; color:var(--ink-dim);}
+.wa-banner-arrow{font-size:20px; color:#25D366; flex:none;}
+.research-upload-card p{font-size:12.5px; color:var(--ink-dim); line-height:1.8;}
+
+/* ---------- شبكة تصنيفات الأبحاث ---------- */
+.research-cat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;}
+.research-cat-item{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 6px;
+  text-align:center; cursor:pointer;
+}
+.research-cat-item.active{border-color:var(--accent-4); background:rgba(124,156,255,.1);}
+.research-cat-item .rci-icon{font-size:22px; margin-bottom:4px;}
+.research-cat-item .rci-title{font-size:11px; font-weight:700;}
+.research-cat-item .rci-count{font-size:9.5px; color:var(--ink-dim); margin-top:2px;}
+
+.research-item{
+  display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line);
+  border-radius:14px; padding:12px; margin-bottom:8px; text-decoration:none; color:inherit;
+}
+.research-item .ri-icon{font-size:20px; flex:none;}
+.research-item .ri-meta{flex:1; min-width:0;}
+.research-item .ri-meta b{display:block; font-size:13px; color:var(--ink);}
+.research-item .ri-meta span{font-size:11px; color:var(--ink-dim);}
+.research-item .ri-arrow{font-size:18px; color:var(--ink-dim); flex:none;}
+.research-write-card{cursor:pointer;}
+.research-write-card p{font-size:12.5px; color:var(--ink-dim); line-height:1.8;}
+
+/* ---------- شاشة كتابة البحث ---------- */
+.rw-label{display:block; font-size:11.5px; color:var(--ink-dim); margin:10px 0 5px;}
+.rw-label:first-child{margin-top:0;}
+#rwTitle, #rwCategory{
+  width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--line); background:var(--panel-2);
+  color:var(--ink); font-family:'Tajawal'; font-size:13px;
+}
+.rw-section-head{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.rw-sec-title{
+  flex:1; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel-2);
+  color:var(--ink); font-family:'Tajawal'; font-weight:700; font-size:12.5px;
+}
+.rw-sec-remove{
+  flex:none; width:30px; height:30px; border-radius:8px; border:none; background:rgba(255,110,143,.14);
+  color:var(--accent-3); font-size:13px; cursor:pointer;
+}
+.rw-sec-content{
+  width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel-2);
+  color:var(--ink); font-family:'Tajawal'; font-size:12.5px; line-height:1.8; resize:vertical;
+}
+
 .term-toggle{display:flex; gap:8px; margin:18px 0 6px; background:var(--panel-2); border-radius:14px; padding:4px;}
 .term-btn{flex:1; border:none; background:transparent; color:var(--ink-dim); font-family:'Tajawal'; font-weight:700; font-size:12.5px; padding:9px 6px; border-radius:11px; cursor:pointer;}
 .term-btn.active{background:var(--panel); color:var(--ink); box-shadow:0 2px 6px rgba(0,0,0,.25);}
