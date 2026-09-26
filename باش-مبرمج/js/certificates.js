@@ -14,8 +14,8 @@ const CERT_TIERS = [
     minScore: 0.95,
     requireAllUnits: true,
     requireAllExams: true,
-    message: (name)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حقق/حققت المركز الأول بامتياز مذهل، ` +
-      `باجتياز كل الوحدات الثلاث عشرة وكل الامتحانات الشاملة الخمسة بتفوّق واضح. إنجاز استثنائي يستحق كل التقدير — استمر/ي على هذا المستوى الرائع! 🏆`
+    message: (name, s)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حقق/حققت المركز الأول بامتياز مذهل في ${(s&&s.gradeLabel)||'المنهج'}، ` +
+      `باجتياز كل الوحدات${s&&s.unitsCount?` (${s.unitsCount})`:''}${s&&s.examsCount?` وكل الامتحانات الشاملة (${s.examsCount})`:''} بتفوّق واضح. إنجاز استثنائي يستحق كل التقدير — استمر/ي على هذا المستوى الرائع! 🏆`
   },
   {
     id: 'silver',
@@ -25,7 +25,7 @@ const CERT_TIERS = [
     minScore: 0.90,
     requireAllUnits: true,
     requireAllExams: false,
-    message: (name)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حقق/حققت المركز الثاني بتفوّق ملحوظ، ` +
+    message: (name, s)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حقق/حققت المركز الثاني بتفوّق ملحوظ في ${(s&&s.gradeLabel)||'المنهج'}، ` +
       `بعد إتمام كل وحدات المنهج بنجاح وتحقيق نتائج قوية في الامتحانات الشاملة. مجهود رائع، وخطوة كمان تعمل الشرف الأعلى! 🌟`
   },
   {
@@ -36,7 +36,7 @@ const CERT_TIERS = [
     minScore: 0.80,
     requireAllUnits: true,
     requireAllExams: false,
-    message: (name)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حقق/حققت المركز الثالث بتقدير امتياز، ` +
+    message: (name, s)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حقق/حققت المركز الثالث بتقدير امتياز في ${(s&&s.gradeLabel)||'المنهج'}، ` +
       `بعد إنهاء كل وحدات المنهج بنتيجة قوية وثابتة. استمر/ي في المراجعة عشان توصل/ي لأعلى مركز ممكن! 💪`
   },
   {
@@ -46,7 +46,7 @@ const CERT_TIERS = [
     ribbon: '#8A5AD6',
     minScore: 0.70,
     minAttempted: 14,
-    message: (name)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حصل/حصلت على شهادة تفوّق ` +
+    message: (name, s)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حصل/حصلت على شهادة تفوّق في ${(s&&s.gradeLabel)||'المنهج'} ` +
       `لأداء قوي عبر معظم اختبارات المنهج. خطوات كويسة جدًا — كمّل بقية الوحدات والامتحانات عشان توصل لمركز أعلى! 👏`
   },
   {
@@ -56,7 +56,7 @@ const CERT_TIERS = [
     ribbon: '#3AA0FF',
     minScore: 0.5,
     minAttempted: 9,
-    message: (name)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حصل/حصلت على شهادة إنجاز ` +
+    message: (name, s)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} حصل/حصلت على شهادة إنجاز في ${(s&&s.gradeLabel)||'المنهج'} ` +
       `لتقدّم ملموس في مذاكرة ومراجعة المنهج. استمر/ي، كل درس ونتيجة بتقربك من الشهادات الأعلى! 🚀`
   },
   {
@@ -66,24 +66,30 @@ const CERT_TIERS = [
     ribbon: '#4FBF8B',
     minScore: 0,
     minAttempted: 1,
-    message: (name)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} بدأ/بدأت رحلة المراجعة على المنصة. ` +
+    message: (name, s)=> `تُشهد منصة "علوم البرمجة" بأن الطالب/ة ${name} بدأ/بدأت رحلة المراجعة على المنصة في ${(s&&s.gradeLabel)||'المنهج'}. ` +
       `أول خطوة دايمًا الأهم — كمّل باقي الوحدات والامتحانات عشان تفتح شهادات ومراكز أعلى! 🌱`
   }
 ];
 
 // ---------- حساب المركز الحالي بناءً على كل نتائج الاختبارات المسجّلة ----------
+// النطاق (أي مجموعة الوحدات/الامتحانات المُعتمَدة في الحساب) يتغيّر تلقائيًا حسب صف الطالب
+// الحالي (STATE.currentGrade) عبر certScope() — راجع تعريفها في data.js.
 function computeCertRank(){
-  const unitScores = UNITS.map(u => (STATE.finalTestResults[u.id] && STATE.finalTestResults[u.id].bestScore) || 0);
-  const examScores  = FINAL_EXAMS.map(ex => (STATE.examResults[ex.id] && STATE.examResults[ex.id].bestScore) || 0);
+  const scope = certScope();
+  const scopeUnits = scope.units, scopeExams = scope.exams;
+  if(!scopeUnits.length) return null; // لسه مفيش محتوى مُضاف لصف الطالب الحالي، فمفيش شهادة تُحسب
+
+  const unitScores = scopeUnits.map(u => (STATE.finalTestResults[u.id] && STATE.finalTestResults[u.id].bestScore) || 0);
+  const examScores  = scopeExams.map(ex => (STATE.examResults[ex.id] && STATE.examResults[ex.id].bestScore) || 0);
   const allScores = unitScores.concat(examScores);
   const attemptedCount = allScores.filter(s => s > 0).length +
-    UNITS.filter(u => STATE.finalTestResults[u.id] && STATE.finalTestResults[u.id].bestScore === 0 && STATE.finalTestResults[u.id].attempts > 0).length; // يحسب حتى محاولة بنتيجة صفر كمحاولة
+    scopeUnits.filter(u => STATE.finalTestResults[u.id] && STATE.finalTestResults[u.id].bestScore === 0 && STATE.finalTestResults[u.id].attempts > 0).length; // يحسب حتى محاولة بنتيجة صفر كمحاولة
   const overallScore = allScores.length ? (allScores.reduce((a,b)=>a+b,0) / allScores.length) : 0;
   const unitAvgScore = unitScores.length ? (unitScores.reduce((a,b)=>a+b,0) / unitScores.length) : 0;
   const examAvgScore = examScores.length ? (examScores.reduce((a,b)=>a+b,0) / examScores.length) : 0;
 
-  const allUnitsPassed = UNITS.every(u => unitFinalTestPassed(u));
-  const allExamsPassed = FINAL_EXAMS.every(ex => examPassed(ex.id));
+  const allUnitsPassed = scopeUnits.every(u => unitFinalTestPassed(u));
+  const allExamsPassed = scopeExams.length ? scopeExams.every(ex => examPassed(ex.id)) : true; // لو صف الطالب لسه من غير امتحانات شاملة، الشرط ده مش عائق
 
   const meetsTier = (tier)=>{
     if(overallScore < tier.minScore) return false;
@@ -102,6 +108,7 @@ function computeCertRank(){
     overallScore, unitAvgScore, examAvgScore,
     attemptedCount, totalAssessments: allScores.length,
     allUnitsPassed, allExamsPassed,
+    gradeLabel: scope.gradeLabel, // اسم صف الطالب — يُستخدم في نص الشهادة والتقرير
     achievedTiers // كل المراكز اللي الطالب حققها فعليًا (للتبديل بينها في الواجهة)
   };
 }
@@ -126,7 +133,7 @@ function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight){
 }
 
 function drawCertificate(canvas, data, overrideName){
-  const { tier, overallScore, unitAvgScore, examAvgScore } = data;
+  const { tier, overallScore, unitAvgScore, examAvgScore, gradeLabel, totalAssessments } = data;
   const name = overrideName || STATE.userName || 'طالب';
   const W = canvas.width, H = canvas.height;
   const ctx = canvas.getContext('2d');
@@ -145,10 +152,10 @@ function drawCertificate(canvas, data, overrideName){
 
   ctx.textAlign = 'center';
 
-  // شعار المنصة
+  // شعار المنصة + الصف الدراسي
   ctx.fillStyle = '#999';
   ctx.font = `${Math.round(W*0.022)}px Tajawal, sans-serif`;
-  ctx.fillText('علوم البرمجة', W/2, H*0.10);
+  ctx.fillText(`علوم البرمجة — ${gradeLabel || 'الصف الأول الثانوي'}`, W/2, H*0.10);
 
   // الأيقونة الكبيرة
   ctx.font = `${Math.round(W*0.095)}px sans-serif`;
@@ -177,7 +184,8 @@ function drawCertificate(canvas, data, overrideName){
   // نص التهنئة (متعدد الأسطر)
   ctx.fillStyle = '#ddd';
   ctx.font = `${Math.round(W*0.019)}px Tajawal, sans-serif`;
-  wrapCanvasText(ctx, tier.message(name), W/2, H*0.485, W*0.8, W*0.028);
+  const msgScope = certScope();
+  wrapCanvasText(ctx, tier.message(name, { gradeLabel, unitsCount: msgScope.units.length, examsCount: msgScope.exams.length }), W/2, H*0.485, W*0.8, W*0.028);
 
   // ---------- تفصيل النسب: كل فئة + الإجمالي العام ----------
   ctx.fillStyle = '#bbb';
@@ -195,7 +203,7 @@ function drawCertificate(canvas, data, overrideName){
   const latestBadge = typeof latestBadgeEarned === 'function' ? latestBadgeEarned() : null;
   ctx.fillStyle = '#ddd';
   ctx.font = `${Math.round(W*0.02)}px Tajawal, sans-serif`;
-  ctx.fillText(`🏅 إجمالي الجوائز المكتسبة: ${totalBadges} من 18`, W/2, H*0.725);
+  ctx.fillText(`🏅 إجمالي الجوائز المكتسبة: ${totalBadges} من ${totalAssessments || 18}`, W/2, H*0.725);
   if(latestBadge){
     ctx.fillStyle = '#999';
     ctx.font = `${Math.round(W*0.017)}px Tajawal, sans-serif`;

@@ -6,7 +6,7 @@
 // 🔔 رقم إصدار المنصة — غيّر القيمة دي لأي رقم جديد (مثلاً "1.1.0") في كل مرة تعمل فيها
 // تحديث حقيقي على المنصة (دروس/أسئلة/فيتشرز جديدة). كل طالب فتح المنصة قبل كده هيشوف
 // تنبيه صوتي تلقائي بوجود تحديث، وهيتشجّع ياخد نسخة احتياطية من تقدمه قبل ما يكمل.
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.9.0";
 
 // 💬 رابط جروب الواتساب الرسمي — غيّره من هنا لو عملت جروب جديد لاحقًا
 const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/J8aima2bxNU7gHRHBp3B45";
@@ -14,11 +14,25 @@ const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/J8aima2bxNU7gHRHBp3B45";
 const FINAL_TEST_SIZE = 8;      // عدد الأسئلة التي تُعرض في كل محاولة اختبار شامل
 const PASS_THRESHOLD  = 0.7;    // نسبة النجاح المطلوبة لفتح الوحدة التالية (70%)
 
+// 🗓️ فتح "الترم الثاني" و"الصف الثاني بكالوريا" تلقائيًا بتاريخ معيّن — المكانان بيفضلوا مقفولين
+// (شاشة "قريبًا") لحد ما يوصل التاريخ اللي تحدده هنا، وساعتها بيتفتحوا لوحدهم من غير ما تحتاج ترفع
+// أي تحديث تاني وقتها (بشرط يكون المحتوى نفسه اتضاف مسبقًا في TERM2_UNITS / BAC2_UNITS بملف data.js).
+// اكتب التاريخ بصيغة "YYYY-MM-DDTHH:mm:ss" (بتوقيت جهاز الطالب)، أو سيبه null عشان يفضل مقفول لحد
+// ما تحدد تاريخ.
+const UNLOCK_DATE_TERM2 = null;   // مثال: "2026-02-01T00:00:00"
+const UNLOCK_DATE_BAC2  = null;   // مثال: "2026-09-01T00:00:00"
+function isTimeUnlocked(dateStr){
+  if(!dateStr) return false;
+  return new Date() >= new Date(dateStr);
+}
+
 // ============ حالة التطبيق (في الذاكرة + محاولة الحفظ عبر window.storage إن توفر) ============
 let STATE = {
   userName: '',
   studentId: '',
   currentTerm: 1,
+  currentGrade: '1sec',    // '1sec' = الصف الأول الثانوي | '2bac' = الصف الثاني بكالوريا
+  gradeChosen: false,      // false لحد ما الطالب يجاوب على مودال "انت في أي صف؟" أول مرة
   completedLessons: {},    // key: "u1-l0" -> true
   answeredQuiz: {},        // key: "lq-u-l-qi" -> true  (تم الإجابة عليه، صح أو غلط)
   answeredPractice: {},    // key: "lp-u-l-qi" -> true
@@ -94,11 +108,13 @@ async function loadState(){
     }catch(e){ /* لا توجد بيانات محفوظة بعد */ }
   }
   refreshHome();
-  checkUserName();
+  checkGrade();
 }
 function applyLoadedState(parsed){
   STATE.userName           = parsed.userName          || STATE.userName || '';
   STATE.studentId          = parsed.studentId          || STATE.studentId || '';
+  STATE.currentGrade       = parsed.currentGrade       || STATE.currentGrade || '1sec';
+  STATE.gradeChosen        = parsed.gradeChosen        || false;
   STATE.completedLessons  = parsed.completedLessons  || {};
   STATE.answeredQuiz      = parsed.answeredQuiz      || {};
   STATE.answeredPractice  = parsed.answeredPractice  || {};
@@ -106,6 +122,45 @@ function applyLoadedState(parsed){
   STATE.examResults       = parsed.examResults        || {};
   STATE.badgeLog          = parsed.badgeLog           || [];
   STATE.quizCorrect       = parsed.quizCorrect       || 0;
+}
+
+// ============ الصف الدراسي (يتسأل عنه مرة واحدة بدل تبويب يتبدّل بينهم) ============
+const GRADE_NAMES = { '1sec': 'الصف الأول الثانوي', '2bac': 'الصف الثاني بكالوريا' };
+const GRADE_LABELS = {
+  '1sec': '// الصف الأول الثانوي — البرمجة والذكاء الاصطناعي',
+  '2bac': '// الصف الثاني بكالوريا — قريبًا'
+};
+function checkGrade(){
+  applyGradeView(STATE.currentGrade);
+  if(!STATE.gradeChosen){
+    const modal = document.getElementById('gradeModal');
+    if(modal) modal.style.display = 'flex';
+  }else{
+    checkUserName();
+  }
+}
+function chooseGrade(grade){
+  STATE.currentGrade = grade;
+  STATE.gradeChosen = true;
+  const modal = document.getElementById('gradeModal');
+  if(modal) modal.style.display = 'none';
+  applyGradeView(grade);
+  saveState();
+  checkUserName();
+}
+function openGradeModal(){
+  const modal = document.getElementById('gradeModal');
+  if(modal) modal.style.display = 'flex';
+}
+function applyGradeView(grade){
+  const g1 = document.getElementById('grade1secContent');
+  const g2 = document.getElementById('grade2bacPlaceholder');
+  if(g1) g1.style.display = grade==='1sec' ? '' : 'none';
+  if(g2) g2.style.display = grade==='2bac' ? '' : 'none';
+  const eyebrow = document.getElementById('heroEyebrow');
+  if(eyebrow) eyebrow.textContent = GRADE_LABELS[grade] || GRADE_LABELS['1sec'];
+  const gradeLbl = document.getElementById('profGradeLbl');
+  if(gradeLbl) gradeLbl.textContent = GRADE_NAMES[grade] || GRADE_NAMES['1sec'];
 }
 
 // ============ اسم المستخدم (يُستخدم عند مشاركة التقدّم) ============
@@ -136,6 +191,7 @@ function saveUserName(){
 function lessonKey(uId,lIdx){ return `u${uId}-l${lIdx}`; }
 function quizKey(uId,lIdx,qi){ return `lq-${uId}-${lIdx}-${qi}`; }
 function practiceKey(uId,lIdx,qi){ return `lp-${uId}-${lIdx}-${qi}`; }
+function findUnit(id){ return UNITS.find(x=>x.id===id) || TERM2_UNITS.find(x=>x.id===id); }
 function totalLessons(){ return UNITS.reduce((s,u)=>s+u.lessons.length,0); }
 function doneLessonsCount(){ return Object.keys(STATE.completedLessons).length; }
 function unitDoneCount(u){ return u.lessons.filter((l,i)=>STATE.completedLessons[lessonKey(u.id,i)]).length; }
@@ -173,7 +229,7 @@ function unitFullyComplete(u){
 }
 function isUnitUnlocked(u){
   if(u.id===1) return true;
-  const prev = UNITS.find(x=>x.id===u.id-1);
+  const prev = findUnit(u.id-1);
   return prev ? unitFullyComplete(prev) : true;
 }
 function canTakeFinalTest(u){
@@ -227,38 +283,40 @@ function setActiveTab(tab){
 }
 
 // ============ HOME ============
+function unitCardHTML(u){
+  const done = unitDoneCount(u), tot = u.lessons.length;
+  const ringPct = tot? (done/tot)*100 : 0;
+  const circ = 2*Math.PI*15;
+  const offset = circ - (ringPct/100)*circ;
+  const unlocked = isUnitUnlocked(u);
+  const testPassed = unitFinalTestPassed(u);
+  const cardCls = unlocked ? 'unit-card' : 'unit-card locked';
+  const clickAttr = unlocked ? `onclick="openUnit(${u.id})"` : `onclick="lockedTap(${u.id})"`;
+  return `<div class="${cardCls}" ${clickAttr}>
+    <div class="num" style="background:${unlocked?u.color:'#3a4864'}">${unlocked? u.icon : '🔒'}</div>
+    <div class="meta">
+      <h4>الوحدة ${u.id} — ${u.title} ${testPassed?'<span class="badge-ok">✓ مكتملة</span>':''}</h4>
+      <p>${u.lessons.length} دروس · ${unlocked ? u.intro : 'أكمل الوحدة السابقة بالكامل (دروس + تدريبات + اختبار شامل) لفتحها'}</p>
+    </div>
+    ${unlocked ? `<div class="prog-ring">
+      <svg width="34" height="34">
+        <circle cx="17" cy="17" r="15" stroke="var(--panel-2)" stroke-width="4" fill="none"/>
+        <circle cx="17" cy="17" r="15" stroke="${u.color}" stroke-width="4" fill="none"
+          stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
+      </svg>
+    </div>` : `<div class="lock-ic">🔒</div>`}
+  </div>`;
+}
+function buildUnitsGridHTML(units){
+  return units.map(unitCardHTML).join('');
+}
 function refreshHome(){
   document.getElementById('statUnits').textContent = UNITS.length;
   document.getElementById('statLessons').textContent = doneLessonsCount();
   const pct = Math.round((doneLessonsCount()/totalLessons())*100);
   document.getElementById('statPct').textContent = pct+'%';
   document.getElementById('unitCountLbl').textContent = UNITS.length + ' وحدات';
-
-  const grid = document.getElementById('unitGrid');
-  grid.innerHTML = UNITS.map(u=>{
-    const done = unitDoneCount(u), tot = u.lessons.length;
-    const ringPct = tot? (done/tot)*100 : 0;
-    const circ = 2*Math.PI*15;
-    const offset = circ - (ringPct/100)*circ;
-    const unlocked = isUnitUnlocked(u);
-    const testPassed = unitFinalTestPassed(u);
-    const cardCls = unlocked ? 'unit-card' : 'unit-card locked';
-    const clickAttr = unlocked ? `onclick="openUnit(${u.id})"` : `onclick="lockedTap(${u.id})"`;
-    return `<div class="${cardCls}" ${clickAttr}>
-      <div class="num" style="background:${unlocked?u.color:'#3a4864'}">${unlocked? u.icon : '🔒'}</div>
-      <div class="meta">
-        <h4>الوحدة ${u.id} — ${u.title} ${testPassed?'<span class=\"badge-ok\">✓ مكتملة</span>':''}</h4>
-        <p>${u.lessons.length} دروس · ${unlocked ? u.intro : 'أكمل الوحدة السابقة بالكامل (دروس + تدريبات + اختبار شامل) لفتحها'}</p>
-      </div>
-      ${unlocked ? `<div class="prog-ring">
-        <svg width="34" height="34">
-          <circle cx="17" cy="17" r="15" stroke="var(--panel-2)" stroke-width="4" fill="none"/>
-          <circle cx="17" cy="17" r="15" stroke="${u.color}" stroke-width="4" fill="none"
-            stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
-        </svg>
-      </div>` : `<div class="lock-ic">🔒</div>`}
-    </div>`;
-  }).join('');
+  document.getElementById('unitGrid').innerHTML = buildUnitsGridHTML(UNITS);
 }
 function lockedTap(uId){
   showToast('🔒 أكمل دروس وتدريبات واختبار الوحدة السابقة أولًا لفتح هذه الوحدة');
@@ -266,7 +324,7 @@ function lockedTap(uId){
 
 // ============ UNIT SCREEN ============
 function openUnit(id, push=true){
-  const u = UNITS.find(x=>x.id===id);
+  const u = findUnit(id);
   if(!isUnitUnlocked(u)){ lockedTap(id); return; }
   STATE.currentUnit = u;
   navTo('screen-unit', `الوحدة ${u.id}`, u.title, push);
@@ -393,7 +451,7 @@ function renderLessonLinks(l){
 }
 
 function openLesson(uId, lIdx){
-  const u = UNITS.find(x=>x.id===uId);
+  const u = findUnit(uId);
   STATE.currentUnit = u; STATE.currentLessonIdx = lIdx;
   const l = u.lessons[lIdx];
   navTo('screen-lesson', l.title, `الوحدة ${u.id} — درس ${lIdx+1} من ${u.lessons.length}`);
@@ -647,7 +705,7 @@ function goHomeAfterUnit(){ showTab('home'); }
 
 // ============ الاختبار الشامل (Final Test) ============
 function openFinalTest(uId, fromPaper){
-  const u = UNITS.find(x=>x.id===uId);
+  const u = findUnit(uId);
   if(!canTakeFinalTest(u) && !unitFinalTestPassed(u)){ showToast('أكمل الدروس والتدريبات أولًا'); return; }
   STATE.currentUnit = u;
 
@@ -681,7 +739,7 @@ function openUnitTestFromPaper(uId){ openFinalTest(uId, true); }
 
 function renderFinalTest(){
   const s = STATE.finalTestSession;
-  const u = UNITS.find(x=>x.id===s.unitId);
+  const u = findUnit(s.unitId);
   QREG = {};
   let html = '';
 
@@ -755,11 +813,11 @@ function submitFinalTest(){
   const s = STATE.finalTestSession;
   if(s.answeredCount < s.questions.length) return;
   clearActiveTimer();
-  const u = UNITS.find(x=>x.id===s.unitId);
+  const u = findUnit(s.unitId);
   const score = s.correctCount / s.questions.length;
   const passed = score >= PASS_THRESHOLD;
   const pct = Math.round(score*100);
-  const nextUnit = UNITS.find(x=>x.id===u.id+1);
+  const nextUnit = findUnit(u.id+1);
 
   // انتهى الوقت المقترح في محاولة حية (مش ورقية): نعرض النتيجة للمراجعة بس من غير احتساب
   if(s.timeExpired && !s.fromPaper){
@@ -964,8 +1022,9 @@ function logBadgeEarned(type, id, name, icon){
   STATE.badgeLog.push({ type, id, name, icon, earnedAt: new Date().toISOString() });
 }
 function totalBadgesEarned(){
-  const unitBadges = UNITS.filter(u => STATE.finalTestResults[u.id] && STATE.finalTestResults[u.id].bestScore === 1).length;
-  const examBadges = FINAL_EXAMS.filter(ex => examPassed(ex.id)).length;
+  const scope = certScope();
+  const unitBadges = scope.units.filter(u => STATE.finalTestResults[u.id] && STATE.finalTestResults[u.id].bestScore === 1).length;
+  const examBadges = scope.exams.filter(ex => examPassed(ex.id)).length;
   return unitBadges + examBadges;
 }
 function latestBadgeEarned(){
@@ -976,8 +1035,9 @@ function latestBadgeEarned(){
 function renderBadges(){
   const grid = document.getElementById('badgesGrid');
   if(!grid) return;
+  const scope = certScope();
   let html = '';
-  UNITS.forEach(u=>{
+  scope.units.forEach(u=>{
     const r = STATE.finalTestResults[u.id];
     const unlocked = r && r.bestScore === 1;
     html += `<div class="badge-cell ${unlocked?'unlocked':''}">
@@ -985,13 +1045,16 @@ function renderBadges(){
       <div class="blb">وحدة ${u.id} بلا أخطاء</div>
     </div>`;
   });
-  FINAL_EXAMS.forEach(ex=>{
+  scope.exams.forEach(ex=>{
     const unlocked = examPassed(ex.id);
     html += `<div class="badge-cell ${unlocked?'unlocked':''}">
       <div class="bic">${unlocked?'🏆':'🔒'}</div>
       <div class="blb">امتحان ${ex.id} — 90%+</div>
     </div>`;
   });
+  if(!scope.units.length && !scope.exams.length){
+    html = `<p style="color:var(--ink-dim); font-size:12.5px; text-align:center; grid-column:1/-1;">لسه مفيش وحدات مُضافة لـ${scope.gradeLabel} — الجوائز هتظهر هنا أول ما يتضاف المحتوى.</p>`;
+  }
   grid.innerHTML = html;
 }
 
@@ -1046,18 +1109,19 @@ function drawAchievementsReportCanvas(canvas, data){
 function buildAchievementsData(){
   const name = STATE.userName || 'طالب';
   const rank = computeCertRank();
+  const scope = certScope();
   return {
     student: { name, id: STATE.studentId || '', exportDate: new Date().toISOString() },
     certificate: rank ? {
       tierId: rank.tier.id, title: rank.tier.title,
-      congratulation: rank.tier.message(name),
+      congratulation: rank.tier.message(name, { gradeLabel: rank.gradeLabel, unitsCount: scope.units.length, examsCount: scope.exams.length }),
       overallScorePercent: Math.round(rank.overallScore * 100)
     } : { tierId:'none', title:'لا يوجد مركز محقق بعد', overallScorePercent:0 },
-    unitBadges: UNITS.map(u=>{
+    unitBadges: scope.units.map(u=>{
       const r = STATE.finalTestResults[u.id];
       return { unitId:u.id, title:`وحدة ${u.id} — ${u.title} — بلا أخطاء`, earned: !!(r && r.bestScore===1), bestScorePercent: r?Math.round(r.bestScore*100):0 };
     }),
-    examBadges: FINAL_EXAMS.map(ex=>{
+    examBadges: scope.exams.map(ex=>{
       const r = STATE.examResults[ex.id];
       return { examId:ex.id, title:`${ex.title} — 90% فأكثر`, earned: examPassed(ex.id), bestScorePercent: r?Math.round(r.bestScore*100):0 };
     })
@@ -1218,20 +1282,25 @@ function researchDraftKey(){
 function loadResearchDraft(){
   try{
     const raw = localStorage.getItem(researchDraftKey());
-    if(raw) return JSON.parse(raw);
+    if(raw){
+      const d = JSON.parse(raw);
+      if(!d.attachments) d.attachments = [];
+      return d;
+    }
   }catch(e){}
-  return { title:'', category: RESEARCH_CATEGORIES[0].id, sections: JSON.parse(JSON.stringify(DEFAULT_RESEARCH_SECTIONS)), updatedAt:null };
+  return { title:'', category: RESEARCH_CATEGORIES[0].id, sections: JSON.parse(JSON.stringify(DEFAULT_RESEARCH_SECTIONS)), attachments: [], updatedAt:null };
 }
 
 function saveResearchDraft(draft){
-  try{ localStorage.setItem(researchDraftKey(), JSON.stringify(draft)); }catch(e){}
+  try{ localStorage.setItem(researchDraftKey(), JSON.stringify(draft)); }
+  catch(e){ showToast('⚠️ المسودة كبيرة جدًا (غالبًا بسبب صور كتير)، جرّب تقلل حجم الصور أو تصدّر PDF دلوقتي'); }
 }
 
 let currentResearchDraft = null;
 
 function openResearchComposer(){
   currentResearchDraft = loadResearchDraft();
-  navTo('screen-research-write', 'اعمل بحثك بنفسك', 'اكتب بحثك وصدّره PDF جاهز للإرسال');
+  navTo('screen-research-write', 'اعمل بحثك بنفسك', 'اكتب بحثك وضيف صور وأدلة وصدّره PDF جاهز للإرسال');
   renderResearchComposer();
 }
 
@@ -1251,6 +1320,32 @@ function renderResearchComposer(){
       </div>
       <textarea class="rw-sec-content" placeholder="اكتب محتوى هذا القسم هنا…" rows="5" oninput="updateResearchSection(${i}, 'content', this.value)">${s.content||''}</textarea>
     </div>`).join('');
+
+  renderResearchAttachments();
+}
+
+function renderResearchAttachments(){
+  const d = currentResearchDraft;
+  const wrap = document.getElementById('rwAttachments');
+  if(!wrap) return;
+  wrap.innerHTML = (d.attachments||[]).map((a, i)=>{
+    if(a.type === 'image'){
+      return `<div class="card rw-section">
+        <div class="rw-section-head"><b style="font-size:12.5px;">🖼️ صورة</b><button class="rw-sec-remove" onclick="removeResearchAttachment(${i})">✕</button></div>
+        <input type="file" accept="image/*" onchange="onResearchImageSelected(${i}, this)">
+        ${a.imageData ? `<img src="${a.imageData}" style="max-width:100%; border-radius:10px; margin-top:8px;">` : ''}
+        <input type="text" class="rw-sec-title" style="margin-top:8px;" placeholder="وصف الصورة (اختياري)" value="${(a.caption||'').replace(/"/g,'&quot;')}" oninput="updateResearchAttachment(${i}, 'caption', this.value)">
+      </div>`;
+    }
+    const meta = a.type === 'fact' ? { icon:'🔎', label:'دليل / حقيقة علمية' } : { icon:'🧪', label:'تجربة' };
+    return `<div class="card rw-section">
+      <div class="rw-section-head">
+        <input type="text" class="rw-sec-title" placeholder="عنوان ${meta.label}" value="${(a.title||'').replace(/"/g,'&quot;')}" oninput="updateResearchAttachment(${i}, 'title', this.value)">
+        <button class="rw-sec-remove" onclick="removeResearchAttachment(${i})">✕</button>
+      </div>
+      <textarea class="rw-sec-content" rows="4" placeholder="${a.type==='fact' ? 'اكتب الحقيقة أو الدليل العلمي وتفاصيله هنا…' : 'اكتب خطوات التجربة والملاحظات والنتيجة هنا…'}" oninput="updateResearchAttachment(${i}, 'content', this.value)">${a.content||''}</textarea>
+    </div>`;
+  }).join('');
 }
 
 function onResearchDraftChange(){
@@ -1280,6 +1375,39 @@ function removeResearchSection(idx){
   renderResearchComposer();
 }
 
+// ---------- الإضافات: صور، أدلة/حقائق علمية، تجارب ----------
+function addResearchAttachment(type){
+  if(!currentResearchDraft.attachments) currentResearchDraft.attachments = [];
+  const item = type === 'image' ? { type, caption:'', imageData:null } : { type, title:'', content:'' };
+  currentResearchDraft.attachments.push(item);
+  saveResearchDraft(currentResearchDraft);
+  renderResearchAttachments();
+}
+
+function removeResearchAttachment(idx){
+  currentResearchDraft.attachments.splice(idx, 1);
+  saveResearchDraft(currentResearchDraft);
+  renderResearchAttachments();
+}
+
+function updateResearchAttachment(idx, field, value){
+  currentResearchDraft.attachments[idx][field] = value;
+  currentResearchDraft.updatedAt = new Date().toISOString();
+  saveResearchDraft(currentResearchDraft);
+}
+
+function onResearchImageSelected(idx, fileInput){
+  const file = fileInput.files && fileInput.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    currentResearchDraft.attachments[idx].imageData = e.target.result;
+    saveResearchDraft(currentResearchDraft);
+    renderResearchAttachments();
+  };
+  reader.readAsDataURL(file);
+}
+
 function deleteResearchDraft(){
   if(!confirm('متأكد إنك عايز تمسح البحث ده كله وتبدأ من جديد؟ الإجراء ده لا يمكن التراجع عنه.')) return;
   try{ localStorage.removeItem(researchDraftKey()); }catch(e){}
@@ -1301,6 +1429,16 @@ function exportResearchPDF(){
     body += `<h2>${s.title || ''}</h2><p>${(s.content||'').replace(/\n/g,'<br>')}</p>`;
   });
 
+  (d.attachments||[]).forEach(a=>{
+    if(a.type === 'image' && a.imageData){
+      body += `<div style="margin:16px 0;"><img src="${a.imageData}" style="max-width:100%; border-radius:8px;">${a.caption ? `<div class="meta" style="margin-top:6px;">${a.caption}</div>` : ''}</div>`;
+    } else if(a.type === 'fact'){
+      body += `<h2>🔎 ${a.title || 'دليل / حقيقة علمية'}</h2><p>${(a.content||'').replace(/\n/g,'<br>')}</p>`;
+    } else if(a.type === 'experiment'){
+      body += `<h2>🧪 ${a.title || 'تجربة'}</h2><p>${(a.content||'').replace(/\n/g,'<br>')}</p>`;
+    }
+  });
+
   openPrintWindow(title, body);
   showToast('جهّزنا ملف البحث — احفظه كـ PDF من نافذة الطباعة، وابعته على الجروب 📲');
 }
@@ -1311,6 +1449,8 @@ function renderProfile(){
   const idEl = document.getElementById('profStudentId');
   if(greetEl) greetEl.textContent = STATE.userName ? `أهلًا بيك يا ${STATE.userName} 👋` : 'أهلًا بيك 👋 (اضغط تعديل الاسم)';
   if(idEl) idEl.textContent = STATE.studentId ? `معرفك: ${STATE.studentId}` : '';
+  const gradeLbl = document.getElementById('profGradeLbl');
+  if(gradeLbl) gradeLbl.textContent = GRADE_NAMES[STATE.currentGrade] || GRADE_NAMES['1sec'];
   renderBadges();
   renderCertTeaser();
   const done = doneLessonsCount(), tot = totalLessons();
@@ -1437,13 +1577,32 @@ async function shareProgress(){
   }catch(e){ showToast('تعذّرت المشاركة، حاول مرة أخرى'); }
 }
 
-// ============ الترم الثاني (مكان جاهز للمحتوى القادم) ============
+// ============ الترم الثاني (مكان جاهز للمحتوى القادم، مقفول بتاريخ) ============
 function switchTerm(term){
   STATE.currentTerm = term;
-  document.querySelectorAll('.term-btn').forEach(b=> b.classList.toggle('active', Number(b.dataset.term)===term));
+  document.querySelector('#grade1secContent .term-toggle').querySelectorAll('.term-btn').forEach(b=> b.classList.toggle('active', Number(b.dataset.term)===term));
   document.getElementById('term1Content').style.display = term===1 ? '' : 'none';
-  document.getElementById('term2Placeholder').style.display = term===2 ? '' : 'none';
+  document.getElementById('term2Content').style.display = term===2 ? '' : 'none';
+  if(term===2) renderTerm2();
 }
+function renderTerm2(){
+  const grid = document.getElementById('term2Grid');
+  const placeholder = document.getElementById('term2Placeholder');
+  const unlocked = isTimeUnlocked(UNLOCK_DATE_TERM2) && TERM2_UNITS.length>0;
+  if(unlocked){
+    grid.innerHTML = buildUnitsGridHTML(TERM2_UNITS);
+    grid.style.display = '';
+    placeholder.style.display = 'none';
+  }else{
+    grid.style.display = 'none';
+    placeholder.style.display = '';
+  }
+}
+
+// ============ الصف الثاني بكالوريا (مكان جاهز للمحتوى القادم، مقفول بتاريخ) ============
+// ملحوظة: المكان ده مجمّد عمدًا لحد ما يتوصل محتوى الصف الثاني بكالوريا (وحدات، دروس، أسئلة) وبعد
+// كمان ما يوصل التاريخ في UNLOCK_DATE_BAC2 أعلى الملف. أول ما يتضاف المحتوى في data.js (BAC2_UNITS)
+// هيتم ربطه بنفس آلية الترم الثاني (renderTerm2/buildUnitsGridHTML) وقتها.
 
 
 // ============ الشهادات والمراكز ============
@@ -1690,7 +1849,7 @@ function printAnswerKey(type, id){
     title = `نموذج إجابة — ${ex.title}`;
     questions = ex.questions;
   } else {
-    const u = UNITS.find(x=>x.id===id);
+    const u = findUnit(id);
     if(!u || !u.finalTest) return;
     title = `نموذج إجابة — بنك أسئلة الوحدة ${u.id}`;
     questions = u.finalTest;
@@ -1707,14 +1866,14 @@ function printExamPaper(examId){
 }
 
 function printUnitTestBank(uId){
-  const u = UNITS.find(x=>x.id===uId);
+  const u = findUnit(uId);
   if(!u || !u.finalTest || !u.finalTest.length) return;
   const html = buildQuestionsPaperHtml(`بنك أسئلة اختبار الوحدة ${u.id} — ${u.title}`, 'مجموعة كاملة من أسئلة مراجعة هذه الوحدة', u.finalTest, false);
   openPrintWindow(u.title, html);
 }
 
 function printLessonContent(uId, lIdx){
-  const u = UNITS.find(x=>x.id===uId);
+  const u = findUnit(uId);
   if(!u) return;
   const l = u.lessons[lIdx];
   let body = `<h1>${l.title}</h1><div class="meta">الوحدة ${u.id} — ${u.title} — درس ${lIdx+1} من ${u.lessons.length}</div>`;
@@ -1730,7 +1889,7 @@ function printLessonContent(uId, lIdx){
 }
 
 function printUnitBooklet(uId){
-  const u = UNITS.find(x=>x.id===uId);
+  const u = findUnit(uId);
   if(!u) return;
   let body = `<h1>الوحدة ${u.id} — ${u.title}</h1><div class="meta">${u.intro}</div>`;
   u.lessons.forEach((l,li)=>{
@@ -1953,6 +2112,25 @@ function triggerInstall(){
       showToast('لتثبيت التطبيق: افتح قائمة المتصفح واختر "تثبيت التطبيق" أو "Install App"');
     }
   }
+}
+
+// ---------- تحديث التطبيق المثبّت يدويًا (لو الاسم/اللوجو/المحتوى اتغيّر ومحتاج يظهر فورًا) ----------
+async function forceAppUpdate(){
+  showToast('⏳ جاري تحديث التطبيق...');
+  try{
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  }catch(e){ /* تجاهل بصمت لو الكاش مش متاح */ }
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  }catch(e){ /* تجاهل بصمت */ }
+  showToast('✅ تم التحديث، جاري إعادة تحميل التطبيق...');
+  setTimeout(()=>{ location.reload(); }, 600);
 }
 
 // ============ تنبيه تحديث المنصة (صوتي + مرئي) ============
