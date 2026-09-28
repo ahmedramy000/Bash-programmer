@@ -11,16 +11,53 @@
   --accent-3:#FF6E8F;
   --accent-4:#7C9CFF;
   --cream:#FBF6EC;
+  --bg-glow-1:#16233f;
+  --bg-glow-2:#12213a;
   --radius:20px;
+  --app-max:560px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
 }
+/* ---------- المظهر (Themes): الأساسي (افتراضي) / أبيض (فاتح) / أسود (داكن بالكامل) ---------- */
+:root[data-theme="light"]{
+  --bg:#F2F5FB;
+  --bg-soft:#FFFFFF;
+  --panel:#FFFFFF;
+  --panel-2:#EEF2F9;
+  --line:rgba(20,30,60,.10);
+  --ink:#151B2C;
+  --ink-dim:#5C6B87;
+  --accent:#0FB89E;
+  --accent-2:#E08A1E;
+  --accent-3:#E24870;
+  --accent-4:#4F72E0;
+  --bg-glow-1:#dde8ff;
+  --bg-glow-2:#e1f7f1;
+}
+:root[data-theme="black"]{
+  --bg:#000000;
+  --bg-soft:#000000;
+  --panel:#121212;
+  --panel-2:#1C1C1C;
+  --line:rgba(255,255,255,.10);
+  --ink:#FFFFFF;
+  --ink-dim:#9AA0AC;
+  --accent:#33E0C2;
+  --accent-2:#FFB94D;
+  --accent-3:#FF6E8F;
+  --accent-4:#7C9CFF;
+  --bg-glow-1:#0a0a0a;
+  --bg-glow-2:#060606;
+}
+/* ---------- أبعاد جديدة: تابلت وبيسي (الموبايل هو الافتراضي) ---------- */
+@media (min-width:768px){ :root{ --app-max:760px; } }
+@media (min-width:1024px){ :root{ --app-max:1040px; } }
 *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
 html,body{height:100%;}
 body{
   margin:0; background:
-    radial-gradient(1200px 600px at 100% -10%, #16233f 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 10%, #12213a 0%, transparent 55%),
+    radial-gradient(1200px 600px at 100% -10%, var(--bg-glow-1) 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, var(--bg-glow-2) 0%, transparent 55%),
     var(--bg);
   color:var(--ink);
   font-family:'Tajawal',sans-serif;
@@ -31,7 +68,7 @@ body{
 ::selection{background:var(--accent); color:#04231d;}
 
 /* ---------- App shell ---------- */
-#app{max-width:560px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(78px + var(--safe-b));}
+#app{max-width:var(--app-max); margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(78px + var(--safe-b));}
 
 /* ---------- Top bar ---------- */
 .topbar{
@@ -188,7 +225,7 @@ body{
 /* ---------- Bottom nav ---------- */
 .tabbar{
   position:fixed; bottom:0; inset-inline:0; z-index:50;
-  max-width:560px; margin:0 auto;
+  max-width:var(--app-max); margin:0 auto;
   background:rgba(16,26,46,.92); backdrop-filter:blur(14px);
   border-top:1px solid var(--line);
   display:flex; padding:8px 6px calc(8px + var(--safe-b));
@@ -456,3 +493,25 @@ body{
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
 @media (min-width:560px){ #app{border-inline:1px solid var(--line);} }
+
+/* ---------- تخطيطات التابلت والبيسي: شبكات متعددة الأعمدة بدل عمود واحد ---------- */
+@media (min-width:768px){
+  .unit-grid{display:grid; grid-template-columns:repeat(2,1fr); align-items:stretch;}
+  .badges-grid{grid-template-columns:repeat(6,1fr);}
+  .hero-stats{gap:18px;}
+}
+@media (min-width:1024px){
+  .unit-grid{grid-template-columns:repeat(3,1fr);}
+  .badges-grid{grid-template-columns:repeat(8,1fr);}
+  .research-cat-grid{grid-template-columns:repeat(4,1fr);}
+}
+
+/* ---------- مفتاح اختيار المظهر (يظهر في صفحة "تقدّمي") ---------- */
+.theme-swatches{display:flex; gap:10px; margin-top:4px;}
+.theme-swatch{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 6px;
+  border-radius:14px; border:2px solid var(--line); background:var(--panel-2); cursor:pointer; font-family:'Tajawal';
+}
+.theme-swatch.active{border-color:var(--accent);}
+.theme-swatch .dot{width:26px; height:26px; border-radius:50%; border:1px solid rgba(0,0,0,.15);}
+.theme-swatch .lb{font-size:11px; font-weight:700; color:var(--ink);}
