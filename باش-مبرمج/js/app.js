@@ -6,7 +6,7 @@
 // 🔔 رقم إصدار المنصة — غيّر القيمة دي لأي رقم جديد (مثلاً "1.1.0") في كل مرة تعمل فيها
 // تحديث حقيقي على المنصة (دروس/أسئلة/فيتشرز جديدة). كل طالب فتح المنصة قبل كده هيشوف
 // تنبيه صوتي تلقائي بوجود تحديث، وهيتشجّع ياخد نسخة احتياطية من تقدمه قبل ما يكمل.
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "1.14.0";
 
 // 💬 رابط جروب الواتساب الرسمي — غيّره من هنا لو عملت جروب جديد لاحقًا
 const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/J8aima2bxNU7gHRHBp3B45";
@@ -20,7 +20,7 @@ const PASS_THRESHOLD  = 0.7;    // نسبة النجاح المطلوبة لفت
 // اكتب التاريخ بصيغة "YYYY-MM-DDTHH:mm:ss" (بتوقيت جهاز الطالب)، أو سيبه null عشان يفضل مقفول لحد
 // ما تحدد تاريخ.
 const UNLOCK_DATE_TERM2 = null;   // مثال: "2026-02-01T00:00:00"
-const UNLOCK_DATE_BAC2  = null;   // مثال: "2026-09-01T00:00:00"
+const UNLOCK_DATE_BAC2  = "2020-01-01T00:00:00";   // مفتوح الآن — غيّره لتاريخ مستقبلي لو عاوز تقفله لحد ميعاد معين، أو null للقفل الكامل
 function isTimeUnlocked(dateStr){
   if(!dateStr) return false;
   return new Date() >= new Date(dateStr);
@@ -33,6 +33,7 @@ let STATE = {
   currentTerm: 1,
   currentGrade: '1sec',    // '1sec' = الصف الأول الثانوي | '2bac' = الصف الثاني بكالوريا
   gradeChosen: false,      // false لحد ما الطالب يجاوب على مودال "انت في أي صف؟" أول مرة
+  theme: 'default',        // 'default' | 'light' (أبيض) | 'black' (أسود)
   completedLessons: {},    // key: "u1-l0" -> true
   answeredQuiz: {},        // key: "lq-u-l-qi" -> true  (تم الإجابة عليه، صح أو غلط)
   answeredPractice: {},    // key: "lp-u-l-qi" -> true
@@ -40,6 +41,7 @@ let STATE = {
   examResults: {},         // key: examId -> {bestScore:0-1, attempts:n, passed:bool}
   badgeLog: [],            // [{type:'unit'|'exam', id, name, icon, earnedAt}] بترتيب الحدوث
   quizCorrect: 0,
+  quizCorrectBy: {'1sec':0,'2bac':0},  // إجابات صحيحة لكل صف على حدة
   currentUnit: null,
   currentLessonIdx: 0,
   finalTestSession: null,  // {unitId, questions:[...], answeredCount, correctCount}
@@ -47,13 +49,27 @@ let STATE = {
   history: ['screen-home']
 };
 
-const GLOSSARY = buildGlossary();
 let QREG = {}; // سجل مؤقت لأسئلة الشاشة الحالية: key -> {type, correct, kind, locked}
 
 // ---------- تخزين دائم: نظام "ملف لكل طالب" عبر localStorage (يشتغل بدون إنترنت وبين الجلسات) ----------
 const REGISTRY_KEY = 'zakera_registry';
 const ACTIVE_ID_KEY = 'zakera_active_id';
 const PROFILE_PREFIX = 'zakera_profile_';
+
+// ============ المظهر: يُطبَّق فورًا (Sync) قبل أي رسم للواجهة، لتفادي وميض بلون غلط ============
+(function applyThemeEarly(){
+  try{
+    if(typeof localStorage === 'undefined') return;
+    const activeId = localStorage.getItem(ACTIVE_ID_KEY);
+    if(!activeId) return;
+    const raw = localStorage.getItem(PROFILE_PREFIX + activeId);
+    if(!raw) return;
+    const parsed = JSON.parse(raw);
+    if(parsed && parsed.theme && parsed.theme !== 'default'){
+      document.documentElement.setAttribute('data-theme', parsed.theme);
+    }
+  }catch(e){ /* هيتطبق المظهر لاحقًا بشكل عادي مع باقي البيانات */ }
+})();
 
 function generateStudentId(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // بدون حروف/أرقام ملبسة زي O و0 وI و1
@@ -108,6 +124,7 @@ async function loadState(){
     }catch(e){ /* لا توجد بيانات محفوظة بعد */ }
   }
   refreshHome();
+  applyTheme(STATE.theme);
   checkGrade();
 }
 function applyLoadedState(parsed){
@@ -115,6 +132,7 @@ function applyLoadedState(parsed){
   STATE.studentId          = parsed.studentId          || STATE.studentId || '';
   STATE.currentGrade       = parsed.currentGrade       || STATE.currentGrade || '1sec';
   STATE.gradeChosen        = parsed.gradeChosen        || false;
+  STATE.theme              = parsed.theme              || 'default';
   STATE.completedLessons  = parsed.completedLessons  || {};
   STATE.answeredQuiz      = parsed.answeredQuiz      || {};
   STATE.answeredPractice  = parsed.answeredPractice  || {};
@@ -122,6 +140,22 @@ function applyLoadedState(parsed){
   STATE.examResults       = parsed.examResults        || {};
   STATE.badgeLog          = parsed.badgeLog           || [];
   STATE.quizCorrect       = parsed.quizCorrect       || 0;
+  STATE.quizCorrectBy     = parsed.quizCorrectBy     || {'1sec': parsed.quizCorrect || 0, '2bac': 0};
+}
+
+// ============ المظهر: الأساسي (افتراضي) / أبيض (فاتح) / أسود (داكن بالكامل) ============
+function applyTheme(theme){
+  const t = theme || 'default';
+  if(t === 'default'){ document.documentElement.removeAttribute('data-theme'); }
+  else{ document.documentElement.setAttribute('data-theme', t); }
+  document.querySelectorAll('#themeSwatches .theme-swatch').forEach(b=>{
+    b.classList.toggle('active', b.dataset.theme === t);
+  });
+}
+function chooseTheme(theme){
+  STATE.theme = theme;
+  applyTheme(theme);
+  saveState();
 }
 
 // ============ الصف الدراسي (يتسأل عنه مرة واحدة بدل تبويب يتبدّل بينهم) ============
@@ -157,6 +191,12 @@ function applyGradeView(grade){
   const g2 = document.getElementById('grade2bacPlaceholder');
   if(g1) g1.style.display = grade==='1sec' ? '' : 'none';
   if(g2) g2.style.display = grade==='2bac' ? '' : 'none';
+  const hd = document.getElementById('heroDesc');
+  if(hd) hd.textContent = grade==='2bac'
+    ? 'البرمجة والذكاء الاصطناعي — الجزء الأول: التقنية والمجتمع، الأمن السيبراني، تطبيقات الويب، وتصميم الويب والوسائط.'
+    : '13 وحدة، من مفهوم المعلومات إلى الذكاء الاصطناعي التوليدي وبرمجة الويب — بطاقات مركّزة، أمثلة واقعية، واختبارات فورية تناسب موبايلك.';
+  refreshHome();
+  if(grade==='2bac') renderBac2();
   const eyebrow = document.getElementById('heroEyebrow');
   if(eyebrow) eyebrow.textContent = GRADE_LABELS[grade] || GRADE_LABELS['1sec'];
   const gradeLbl = document.getElementById('profGradeLbl');
@@ -191,9 +231,30 @@ function saveUserName(){
 function lessonKey(uId,lIdx){ return `u${uId}-l${lIdx}`; }
 function quizKey(uId,lIdx,qi){ return `lq-${uId}-${lIdx}-${qi}`; }
 function practiceKey(uId,lIdx,qi){ return `lp-${uId}-${lIdx}-${qi}`; }
-function findUnit(id){ return UNITS.find(x=>x.id===id) || TERM2_UNITS.find(x=>x.id===id); }
+function findUnit(id){ return UNITS.find(x=>x.id===id) || TERM2_UNITS.find(x=>x.id===id) || BAC2_UNITS.find(x=>x.id===id); }
 function totalLessons(){ return UNITS.reduce((s,u)=>s+u.lessons.length,0); }
 function doneLessonsCount(){ return Object.keys(STATE.completedLessons).length; }
+// ---- إحصائيات مقصورة على صف الطالب الحالي فقط (بدون خلط بين الصفوف) ----
+function scopeUnitIds(){ return certScope().units.map(u=>u.id); }
+function totalLessonsScope(){ return certScope().units.reduce((s,u)=>s+u.lessons.length,0); }
+function doneLessonsScope(){
+  const ids = new Set(scopeUnitIds());
+  return Object.keys(STATE.completedLessons).filter(k=>{
+    const m = /^u(\d+)-l/.exec(k); return m && ids.has(Number(m[1]));
+  }).length;
+}
+function gradeOfUnitId(id){ return Number(id) >= 100 ? '2bac' : '1sec'; }
+function quizCorrectScope(){
+  if(!STATE.quizCorrectBy) STATE.quizCorrectBy = {'1sec': STATE.quizCorrect||0, '2bac':0};
+  return STATE.quizCorrectBy[STATE.currentGrade] || 0;
+}
+function bumpQuizCorrect(key){
+  STATE.quizCorrect++;
+  if(!STATE.quizCorrectBy) STATE.quizCorrectBy = {'1sec':0,'2bac':0};
+  const m = /^l[qp]-(\d+)-/.exec(key);
+  const g = m ? gradeOfUnitId(m[1]) : STATE.currentGrade;
+  STATE.quizCorrectBy[g] = (STATE.quizCorrectBy[g]||0) + 1;
+}
 function unitDoneCount(u){ return u.lessons.filter((l,i)=>STATE.completedLessons[lessonKey(u.id,i)]).length; }
 
 function shuffleArray(arr){
@@ -275,7 +336,7 @@ function showTab(tab){
   if(tab==='home'){ navTo('screen-home','علوم البرمجة','ملخص تفاعلي لمنهج المعلومات وتكنولوجيا الاتصالات'); STATE.history=['screen-home']; refreshHome(); }
   if(tab==='glossary'){ navTo('screen-glossary','قاموس المصطلحات','ابحث وتعلم بسرعة'); STATE.history=['screen-glossary']; renderGlossary(''); }
   if(tab==='research'){ navTo('screen-research','الأبحاث','طبية · علمية · مدرسية · برمجية · وأي حاجة تانية'); STATE.history=['screen-research']; renderResearchScreen(); }
-  if(tab==='exams'){ navTo('screen-exams','الامتحانات الشاملة','5 امتحانات × 100 سؤال لمراجعة كل المنهج'); STATE.history=['screen-exams']; renderExamList(); }
+  if(tab==='exams'){ navTo('screen-exams','الامتحانات الشاملة', STATE.currentGrade==='2bac' ? 'مقفولة لحد ما المنهج ينزل كامل' : '5 امتحانات × 100 سؤال لمراجعة كل المنهج'); STATE.history=['screen-exams']; renderExamList(); }
   if(tab==='profile'){ navTo('screen-profile','تقدّمي','رحلتك في الكتاب بالكامل'); STATE.history=['screen-profile']; renderProfile(); }
 }
 function setActiveTab(tab){
@@ -311,12 +372,13 @@ function buildUnitsGridHTML(units){
   return units.map(unitCardHTML).join('');
 }
 function refreshHome(){
-  document.getElementById('statUnits').textContent = UNITS.length;
-  document.getElementById('statLessons').textContent = doneLessonsCount();
-  const pct = Math.round((doneLessonsCount()/totalLessons())*100);
+  document.getElementById('statUnits').textContent = certScope().units.length;
+  document.getElementById('statLessons').textContent = doneLessonsScope();
+  const pct = totalLessonsScope() ? Math.round((doneLessonsScope()/totalLessonsScope())*100) : 0;
   document.getElementById('statPct').textContent = pct+'%';
   document.getElementById('unitCountLbl').textContent = UNITS.length + ' وحدات';
   document.getElementById('unitGrid').innerHTML = buildUnitsGridHTML(UNITS);
+  if(STATE.currentGrade==='2bac') renderBac2();
 }
 function lockedTap(uId){
   showToast('🔒 أكمل دروس وتدريبات واختبار الوحدة السابقة أولًا لفتح هذه الوحدة');
@@ -638,11 +700,11 @@ function answerFill(key, correctAnswer, kind){
 // ============ معالجة مركزية بعد الإجابة على أي سؤال ============
 function onQuestionAnswered(key, isCorrect, kind){
   if(kind === 'quiz'){
-    if(!STATE.answeredQuiz[key] && isCorrect) STATE.quizCorrect++;
+    if(!STATE.answeredQuiz[key] && isCorrect) bumpQuizCorrect(key);
     STATE.answeredQuiz[key] = true;
     saveState();
   } else if(kind === 'practice'){
-    if(!STATE.answeredPractice[key] && isCorrect) STATE.quizCorrect++;
+    if(!STATE.answeredPractice[key] && isCorrect) bumpQuizCorrect(key);
     STATE.answeredPractice[key] = true;
     saveState();
   } else if(kind === 'final'){
@@ -873,9 +935,25 @@ function submitFinalTest(){
 function examResult(examId){ return STATE.examResults[examId]; }
 function examPassed(examId){ const r = examResult(examId); return !!(r && r.passed); }
 
+function bac2ExamsLocked(){ return STATE.currentGrade==='2bac' && !(BAC2_CURRICULUM_COMPLETE && BAC2_EXAMS.length>0); }
 function renderExamList(){
   const list = document.getElementById('examList');
-  list.innerHTML = FINAL_EXAMS.map(ex=>{
+  const intro = document.getElementById('examIntroText');
+  if(STATE.currentGrade==='2bac'){
+    if(intro) intro.textContent = 'امتحانات الصف الثاني بكالوريا هتتفتح هنا أول ما المنهج ينزل كامل.';
+    if(bac2ExamsLocked()){
+      list.innerHTML = `<div class="card" style="text-align:center; padding:34px 20px;">
+        <div style="font-size:40px; margin-bottom:10px;">🔒</div>
+        <h4 style="margin:0 0 6px;">امتحانات الصف الثاني بكالوريا مقفولة</h4>
+        <p style="color:var(--ink-dim); font-size:12.5px; margin:0;">لسه الجزء الأول بس من المنهج نزل — الامتحانات الشاملة هتتفتح لما باقي الأجزاء تتضاف.</p>
+      </div>`;
+      return;
+    }
+  } else if(intro){
+    intro.textContent = '5 امتحانات مختلفة، كل امتحان 100 سؤال يغطي كل الوحدات الـ13، وأصعب شوية من اختبارات الوحدات — للمراجعة الشاملة قبل الامتحان الحقيقي. سجّل 90% أو أكثر في أي امتحان عشان تفتح جائزته 🏆.';
+  }
+  const EXAMS = STATE.currentGrade==='2bac' ? BAC2_EXAMS : FINAL_EXAMS;
+  list.innerHTML = EXAMS.map(ex=>{
     const r = examResult(ex.id);
     const passed = r && r.passed;
     const bestPct = r ? Math.round(r.bestScore*100) : null;
@@ -893,6 +971,7 @@ function renderExamList(){
 }
 
 function openExam(examId, fromPaper){
+  if(bac2ExamsLocked()){ showToast('امتحانات تانية بكالوريا مقفولة لحد ما المنهج ينزل كامل 🔒'); return; }
   const ex = FINAL_EXAMS.find(x=>x.id===examId);
   let pool;
   if(fromPaper){
@@ -1166,8 +1245,9 @@ function exportAchievementsPDF(){
 
 // ============ GLOSSARY ============
 function printGlossaryPDF(){
-  let body = `<h1>قاموس مصطلحات علوم البرمجة</h1><div class="meta">عدد المصطلحات: ${GLOSSARY.length}</div>`;
-  GLOSSARY.forEach(g=>{
+  const GL = getGlossary();
+  let body = `<h1>قاموس مصطلحات علوم البرمجة — ${certScope().gradeLabel}</h1><div class="meta">عدد المصطلحات: ${GL.length}</div>`;
+  GL.forEach(g=>{
     body += `<div class="q"><b>${g.t}</b><p style="margin:2px 0 0; font-size:12.5px;">${g.d}</p></div>`;
   });
   openPrintWindow('قاموس المصطلحات', body);
@@ -1175,8 +1255,13 @@ function printGlossaryPDF(){
 
 function renderGlossary(query){
   const q = (query||'').trim();
-  const filtered = q ? GLOSSARY.filter(g=> g.t.includes(q) || g.d.includes(q)) : GLOSSARY;
+  const GL = getGlossary();
+  const filtered = q ? GL.filter(g=> g.t.includes(q) || g.d.includes(q)) : GL;
   const list = document.getElementById('glossList');
+  if(!filtered.length && !q){
+    list.innerHTML = `<p style="color:var(--ink-dim); text-align:center; margin-top:30px; font-size:13px;">لسه مفيش مصطلحات مُضافة لـ${certScope().gradeLabel}.</p>`;
+    return;
+  }
   if(!filtered.length){
     list.innerHTML = `<p style="color:var(--ink-dim); text-align:center; margin-top:30px; font-size:13px;">لا توجد نتائج لـ "${q}"</p>`;
     return;
@@ -1453,16 +1538,16 @@ function renderProfile(){
   if(gradeLbl) gradeLbl.textContent = GRADE_NAMES[STATE.currentGrade] || GRADE_NAMES['1sec'];
   renderBadges();
   renderCertTeaser();
-  const done = doneLessonsCount(), tot = totalLessons();
+  const done = doneLessonsScope(), tot = totalLessonsScope();
   const pct = tot? Math.round((done/tot)*100) : 0;
   document.getElementById('profPct').textContent = pct+'%';
   document.getElementById('profDone').textContent = done;
-  document.getElementById('profQuiz').textContent = STATE.quizCorrect;
+  document.getElementById('profQuiz').textContent = quizCorrectScope();
   const circ = 2*Math.PI*56;
   document.getElementById('profRing').setAttribute('stroke-dasharray', circ);
   document.getElementById('profRing').setAttribute('stroke-dashoffset', circ - (pct/100)*circ);
 
-  document.getElementById('profUnitList').innerHTML = UNITS.map(u=>{
+  document.getElementById('profUnitList').innerHTML = (certScope().units.length ? certScope().units.map(u=>{
     const d = unitDoneCount(u), t = u.lessons.length;
     const unlocked = isUnitUnlocked(u);
     const testPassed = unitFinalTestPassed(u);
@@ -1472,13 +1557,21 @@ function renderProfile(){
       <div class="meta"><h4>${u.title}</h4><p>${d} / ${t} دروس ${testPassed?'· اختبار شامل ✓':''}</p></div>
       <div class="chev">${testPassed? '🏆': (unlocked?'‹':'🔒')}</div>
     </div>`;
-  }).join('');
+  }).join('') : `<p style="color:var(--ink-dim); font-size:12.5px; text-align:center;">لسه مفيش وحدات مُضافة لـ${certScope().gradeLabel}.</p>`);
 }
 
 async function resetProgress(){
-  if(!confirm('هل تريد بالتأكيد إعادة ضبط كل تقدّمك؟ لا يمكن التراجع عن هذا.')) return;
-  STATE.completedLessons = {}; STATE.answeredQuiz = {}; STATE.answeredPractice = {};
-  STATE.finalTestResults = {}; STATE.quizCorrect = 0;
+  const gl = certScope().gradeLabel;
+  if(!confirm(`هل تريد بالتأكيد إعادة ضبط تقدّمك في ${gl} فقط؟ (تقدّم باقي الصفوف مش هيتأثر). لا يمكن التراجع عن هذا.`)) return;
+  const ids = new Set(scopeUnitIds());
+  const inScope = k => { const m = /^(?:u|l[qp]-)?(\d+)/.exec(k); return m && ids.has(Number(m[1])); };
+  [STATE.completedLessons, STATE.answeredQuiz, STATE.answeredPractice, STATE.finalTestResults].forEach(o=>{
+    Object.keys(o).forEach(k=>{ if(inScope(k)) delete o[k]; });
+  });
+  if(STATE.currentGrade==='1sec') STATE.examResults = {};
+  STATE.quizCorrect = Math.max(0, (STATE.quizCorrect||0) - quizCorrectScope());
+  if(!STATE.quizCorrectBy) STATE.quizCorrectBy = {'1sec':0,'2bac':0};
+  STATE.quizCorrectBy[STATE.currentGrade] = 0;
   await saveState();
   renderProfile(); refreshHome();
   showToast('تم إعادة ضبط التقدّم');
@@ -1584,6 +1677,20 @@ function switchTerm(term){
   document.getElementById('term1Content').style.display = term===1 ? '' : 'none';
   document.getElementById('term2Content').style.display = term===2 ? '' : 'none';
   if(term===2) renderTerm2();
+}
+function renderBac2(){
+  const grid = document.getElementById('bac2Grid');
+  const soon = document.getElementById('bac2Soon');
+  if(!grid || !soon) return;
+  const unlocked = isTimeUnlocked(UNLOCK_DATE_BAC2) && BAC2_UNITS.length>0;
+  if(unlocked){
+    grid.innerHTML = buildUnitsGridHTML(BAC2_UNITS);
+    grid.style.display = '';
+    soon.style.display = 'none';
+  }else{
+    grid.style.display = 'none';
+    soon.style.display = '';
+  }
 }
 function renderTerm2(){
   const grid = document.getElementById('term2Grid');

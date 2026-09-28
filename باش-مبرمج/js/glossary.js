@@ -5,15 +5,24 @@ const EXTRA_GLOSSARY = [
   {t:"الحوسبة", d:"معالجة البيانات وإجراء العمليات الحسابية والمنطقية عليها باستخدام الحاسوب."},
 ];
 
-function buildGlossary(){
+function buildGlossary(units, includeExtra){
   const map = new Map();
-  UNITS.forEach(u=>{
+  (units||[]).forEach(u=>{
     u.lessons.forEach(l=>{
       (l.terms||[]).forEach(term=>{
         if(!map.has(term.t)) map.set(term.t, {t:term.t, d:term.d, unit:u.title});
       });
     });
   });
-  EXTRA_GLOSSARY.forEach(g=>{ if(!map.has(g.t)) map.set(g.t, g); });
+  if(includeExtra) EXTRA_GLOSSARY.forEach(g=>{ if(!map.has(g.t)) map.set(g.t, g); });
   return Array.from(map.values()).sort((a,b)=> a.t.localeCompare(b.t,'ar'));
+}
+
+// قاموس مقصور على صف الطالب الحالي فقط (يُحسب مرة لكل صف ويُخزَّن)
+const _glossCache = {};
+function getGlossary(){
+  const s = certScope();
+  const key = (typeof STATE !== 'undefined' && STATE.currentGrade) || '1sec';
+  if(!_glossCache[key]) _glossCache[key] = buildGlossary(s.units, key === '1sec');
+  return _glossCache[key];
 }
