@@ -35,7 +35,7 @@
     <div class="hero">
       <div class="hero-eyebrow" id="heroEyebrow">// الصف الأول الثانوي — البرمجة والذكاء الاصطناعي</div>
       <h2>علوم البرمجة<br>ملخصك التفاعلي لمادة تكنولوجيا المعلومات</h2>
-      <p>13 وحدة، من مفهوم المعلومات إلى الذكاء الاصطناعي التوليدي وبرمجة الويب — بطاقات مركّزة، أمثلة واقعية، واختبارات فورية تناسب موبايلك.</p>
+      <p id="heroDesc">13 وحدة، من مفهوم المعلومات إلى الذكاء الاصطناعي التوليدي وبرمجة الويب — بطاقات مركّزة، أمثلة واقعية، واختبارات فورية تناسب موبايلك.</p>
       <div class="hero-stats">
         <div class="hstat"><b id="statUnits">13</b><span>وحدة</span></div>
         <div class="hstat"><b id="statLessons">0</b><span>درس منجز</span></div>
@@ -76,7 +76,9 @@
     </div>
 
     <div id="grade2bacPlaceholder" style="display:none;">
-      <div class="card" style="text-align:center; padding:34px 20px;">
+      <div class="section-label"><h3>وحدات الصف الثاني بكالوريا — الجزء الأول</h3></div>
+      <div class="unit-grid" id="bac2Grid" style="display:none;"></div>
+      <div class="card" id="bac2Soon" style="text-align:center; padding:34px 20px;">
         <div style="font-size:40px; margin-bottom:10px;">🚧</div>
         <h4 style="margin:0 0 6px;">محتوى الصف الثاني بكالوريا قريبًا</h4>
         <p style="color:var(--ink-dim); font-size:12.5px; margin:0;">المكان جاهز ومجهّز — هيتفتح تلقائيًا في معاده أول ما يُضاف المحتوى.</p>
@@ -170,7 +172,7 @@
   <div class="screen" id="screen-exams">
     <div class="card exams-intro">
       <span class="card-tag" style="background:rgba(255,110,143,.14); color:var(--accent-3);">🏁 امتحانات المراجعة النهائية</span>
-      <p style="margin:0;">5 امتحانات مختلفة، كل امتحان 100 سؤال يغطي كل الوحدات الـ13، وأصعب شوية من اختبارات الوحدات — للمراجعة الشاملة قبل الامتحان الحقيقي. سجّل 90% أو أكثر في أي امتحان عشان تفتح جائزته 🏆.</p>
+      <p style="margin:0;" id="examIntroText">5 امتحانات مختلفة، كل امتحان 100 سؤال يغطي كل الوحدات الـ13، وأصعب شوية من اختبارات الوحدات — للمراجعة الشاملة قبل الامتحان الحقيقي. سجّل 90% أو أكثر في أي امتحان عشان تفتح جائزته 🏆.</p>
     </div>
     <div id="examList"></div>
   </div>
@@ -270,6 +272,25 @@
       <p style="margin:0 0 10px; font-size:12px; color:var(--ink-dim);">جائزة "وحدة بلا أخطاء" لما تنهي اختبار الوحدة الشامل بـ100%، وجائزة امتحان لما تسجّل 90% أو أكثر فيه.</p>
       <div id="badgesGrid" class="badges-grid"></div>
       <button class="btn btn-ghost" style="width:100%; margin-top:12px;" onclick="exportAchievementsPDF()">📄 تصدير الجوائز والشهادة (PDF)</button>
+    </div>
+
+    <div class="section-label"><h3>المظهر</h3></div>
+    <div class="card">
+      <p style="margin:0 0 10px; font-size:12px; color:var(--ink-dim);">اختر شكل الألوان اللي يريحك أكتر — التطبيق بيحفظ اختيارك تلقائيًا.</p>
+      <div class="theme-swatches" id="themeSwatches">
+        <button class="theme-swatch" data-theme="default" onclick="chooseTheme('default')">
+          <span class="dot" style="background:linear-gradient(135deg,#0B1220,#33E0C2);"></span>
+          <span class="lb">الأساسي</span>
+        </button>
+        <button class="theme-swatch" data-theme="light" onclick="chooseTheme('light')">
+          <span class="dot" style="background:#FFFFFF;"></span>
+          <span class="lb">أبيض</span>
+        </button>
+        <button class="theme-swatch" data-theme="black" onclick="chooseTheme('black')">
+          <span class="dot" style="background:#000000;"></span>
+          <span class="lb">أسود</span>
+        </button>
+      </div>
     </div>
 
     <div class="section-label"><h3>تثبيت التطبيق</h3></div>
