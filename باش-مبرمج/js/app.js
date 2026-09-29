@@ -6,7 +6,7 @@
 // 🔔 رقم إصدار المنصة — غيّر القيمة دي لأي رقم جديد (مثلاً "1.1.0") في كل مرة تعمل فيها
 // تحديث حقيقي على المنصة (دروس/أسئلة/فيتشرز جديدة). كل طالب فتح المنصة قبل كده هيشوف
 // تنبيه صوتي تلقائي بوجود تحديث، وهيتشجّع ياخد نسخة احتياطية من تقدمه قبل ما يكمل.
-const APP_VERSION = "1.14.0";
+const APP_VERSION = "1.15.0";
 
 // 💬 رابط جروب الواتساب الرسمي — غيّره من هنا لو عملت جروب جديد لاحقًا
 const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/J8aima2bxNU7gHRHBp3B45";
@@ -42,6 +42,9 @@ let STATE = {
   badgeLog: [],            // [{type:'unit'|'exam', id, name, icon, earnedAt}] بترتيب الحدوث
   quizCorrect: 0,
   quizCorrectBy: {'1sec':0,'2bac':0},  // إجابات صحيحة لكل صف على حدة
+  xpBy: {'1sec':0,'2bac':0},           // نقاط خبرة (XP) لكل صف على حدة — أساس نظام المستويات
+  startGrade: null,                    // أول صف اختاره الطالب فعليًا على الإطلاق (لا يتغيّر بعد أول اختيار)
+  loyaltyBonusGiven: false,            // مكافأة "بدأت من الأول" — تُمنح مرة واحدة فقط
   currentUnit: null,
   currentLessonIdx: 0,
   finalTestSession: null,  // {unitId, questions:[...], answeredCount, correctCount}
@@ -127,6 +130,25 @@ async function loadState(){
   applyTheme(STATE.theme);
   checkGrade();
 }
+// ترحيل المستخدمين القدامى: ملف محفوظ قبل نظام XP (مفيهوش xpBy) — نحسب له نقاطه من تقدّمه الفعلي.
+// نفس قواعد المنح: درس +10 | إجابة صح +2 (حدّ أدنى، لأن النوع مش متسجّل) | وحدة 100% +50 | امتحان ناجح +100
+// اللي مبدأش أي حاجة فعليًا بيطلع 0 تلقائيًا.
+function computeLegacyXP(){
+  const xp = {'1sec':0,'2bac':0};
+  const unitGrade = id => Number(id) >= 100 ? '2bac' : '1sec';
+  Object.keys(STATE.completedLessons||{}).forEach(k=>{
+    const m = /^u(\d+)-l/.exec(k); if(m) xp[unitGrade(m[1])] += 10;
+  });
+  xp['1sec'] += ((STATE.quizCorrectBy||{})['1sec']||0) * 2;
+  xp['2bac'] += ((STATE.quizCorrectBy||{})['2bac']||0) * 2;
+  Object.keys(STATE.finalTestResults||{}).forEach(id=>{
+    if(STATE.finalTestResults[id] && STATE.finalTestResults[id].bestScore === 1) xp[unitGrade(id)] += 50;
+  });
+  Object.keys(STATE.examResults||{}).forEach(id=>{
+    if(STATE.examResults[id] && STATE.examResults[id].passed) xp['1sec'] += 100;
+  });
+  return xp;
+}
 function applyLoadedState(parsed){
   STATE.userName           = parsed.userName          || STATE.userName || '';
   STATE.studentId          = parsed.studentId          || STATE.studentId || '';
@@ -141,6 +163,9 @@ function applyLoadedState(parsed){
   STATE.badgeLog          = parsed.badgeLog           || [];
   STATE.quizCorrect       = parsed.quizCorrect       || 0;
   STATE.quizCorrectBy     = parsed.quizCorrectBy     || {'1sec': parsed.quizCorrect || 0, '2bac': 0};
+  STATE.xpBy               = parsed.xpBy               || computeLegacyXP();
+  STATE.startGrade          = parsed.startGrade          || null;
+  STATE.loyaltyBonusGiven    = parsed.loyaltyBonusGiven    || false;
 }
 
 // ============ المظهر: الأساسي (افتراضي) / أبيض (فاتح) / أسود (داكن بالكامل) ============
@@ -176,6 +201,7 @@ function checkGrade(){
 function chooseGrade(grade){
   STATE.currentGrade = grade;
   STATE.gradeChosen = true;
+  if(!STATE.startGrade) STATE.startGrade = grade;  // يُسجَّل أول اختيار فقط، ولا يتغيّر بعد كده أبدًا
   const modal = document.getElementById('gradeModal');
   if(modal) modal.style.display = 'none';
   applyGradeView(grade);
@@ -248,12 +274,52 @@ function quizCorrectScope(){
   if(!STATE.quizCorrectBy) STATE.quizCorrectBy = {'1sec': STATE.quizCorrect||0, '2bac':0};
   return STATE.quizCorrectBy[STATE.currentGrade] || 0;
 }
-function bumpQuizCorrect(key){
+function bumpQuizCorrect(key, xpPoints){
   STATE.quizCorrect++;
   if(!STATE.quizCorrectBy) STATE.quizCorrectBy = {'1sec':0,'2bac':0};
   const m = /^l[qp]-(\d+)-/.exec(key);
   const g = m ? gradeOfUnitId(m[1]) : STATE.currentGrade;
   STATE.quizCorrectBy[g] = (STATE.quizCorrectBy[g]||0) + 1;
+  addXP(g, xpPoints || 2);
+}
+
+// ============ نظام المستويات ونقاط الخبرة (XP) — مقصور على صف الطالب الحالي ============
+// مصدر كل نقطة خبرة: درس مكتمل +10 | إجابة كويز صح +2 | إجابة تدريب صح +3 |
+// اختبار وحدة شامل بـ100% أول مرة +50 | امتحان شامل بـ90%+ أول مرة +100
+const LEVELS = [
+  {min:0,   title:'🌱 مبتدئ',   color:'#8FA0C0'},
+  {min:80,  title:'📘 مجتهد',   color:'#7C9CFF'},
+  {min:220, title:'⚡ متمكن',   color:'#33E0C2'},
+  {min:450, title:'🔥 خبير',    color:'#FFB94D'},
+  {min:800, title:'👑 أسطورة',  color:'#FF6E8F'}
+];
+function currentLevel(xp){ let lvl = LEVELS[0]; for(const l of LEVELS){ if(xp>=l.min) lvl=l; } return lvl; }
+function nextLevelInfo(xp){
+  const nxt = LEVELS.find(l=>l.min>xp);
+  if(!nxt) return null;
+  const cur = currentLevel(xp);
+  return { title:nxt.title, remaining: nxt.min-xp, pct: Math.round(((xp-cur.min)/(nxt.min-cur.min))*100) };
+}
+// هل عند الطالب تقدّم حقيقي في الصف الأول الثانوي (مش مجرد اختياره في المودال)؟ شرط لمكافأة الاستمرارية
+function hasReal1secProgress(){
+  return Object.keys(STATE.completedLessons).some(k=>{ const m=/^u(\d+)-l/.exec(k); return m && Number(m[1])<100; });
+}
+// مكافأة "بدأت من الأول": لو الطالب بدأ فعليًا بالصف الأول الثانوي وله تقدّم حقيقي فيه، ثم انتقل
+// لتانية بكالوريا، ياخد 25% نقاط خبرة إضافية على كل حاجة يعملها هناك + مكافأة فورية لمرة واحدة.
+function hasLoyaltyBonus(){
+  return STATE.startGrade === '1sec' && hasReal1secProgress();
+}
+function xpScope(){ return (STATE.xpBy && STATE.xpBy[STATE.currentGrade]) || 0; }
+function addXP(grade, baseAmount){
+  if(!STATE.xpBy) STATE.xpBy = {'1sec':0,'2bac':0};
+  let amount = baseAmount;
+  if(grade === '2bac' && hasLoyaltyBonus()) amount = Math.round(baseAmount * 1.25);
+  STATE.xpBy[grade] = (STATE.xpBy[grade]||0) + amount;
+  if(grade === '2bac' && hasLoyaltyBonus() && !STATE.loyaltyBonusGiven){
+    STATE.loyaltyBonusGiven = true;
+    STATE.xpBy['2bac'] += 150;
+    showToast('🌟 مكافأة "بدأت من الأول"! +150 نقطة خبرة إضافية');
+  }
 }
 function unitDoneCount(u){ return u.lessons.filter((l,i)=>STATE.completedLessons[lessonKey(u.id,i)]).length; }
 
@@ -700,11 +766,11 @@ function answerFill(key, correctAnswer, kind){
 // ============ معالجة مركزية بعد الإجابة على أي سؤال ============
 function onQuestionAnswered(key, isCorrect, kind){
   if(kind === 'quiz'){
-    if(!STATE.answeredQuiz[key] && isCorrect) bumpQuizCorrect(key);
+    if(!STATE.answeredQuiz[key] && isCorrect) bumpQuizCorrect(key, 2);
     STATE.answeredQuiz[key] = true;
     saveState();
   } else if(kind === 'practice'){
-    if(!STATE.answeredPractice[key] && isCorrect) bumpQuizCorrect(key);
+    if(!STATE.answeredPractice[key] && isCorrect) bumpQuizCorrect(key, 3);
     STATE.answeredPractice[key] = true;
     saveState();
   } else if(kind === 'final'){
@@ -737,8 +803,9 @@ function completeLesson(){
   const key = lessonKey(u.id,i);
   const wasNew = !STATE.completedLessons[key];
   STATE.completedLessons[key] = true;
+  if(wasNew) addXP(gradeOfUnitId(u.id), 10);
   saveState();
-  if(wasNew) showToast('أحسنت! تم إنهاء الدرس ✓');
+  if(wasNew) showToast('أحسنت! تم إنهاء الدرس ✓ (+10 XP)');
 
   if(i < u.lessons.length-1){
     openLesson(u.id, i+1);
@@ -909,6 +976,7 @@ function submitFinalTest(){
   };
   if(!hadPerfectBefore && STATE.finalTestResults[u.id].bestScore === 1){
     logBadgeEarned('unit', u.id, `وحدة ${u.id} — ${u.title} — بلا أخطاء`, '🏅');
+    addXP(gradeOfUnitId(u.id), 50);
   }
   saveState();
 
@@ -1070,6 +1138,7 @@ function submitExam(force){
   };
   if(!hadPassedBefore && STATE.examResults[ex.id].passed){
     logBadgeEarned('exam', ex.id, `${ex.title} — 90% فأكثر`, '🏆');
+    addXP('1sec', 100);
   }
   saveState();
 
@@ -1543,6 +1612,23 @@ function renderProfile(){
   document.getElementById('profPct').textContent = pct+'%';
   document.getElementById('profDone').textContent = done;
   document.getElementById('profQuiz').textContent = quizCorrectScope();
+
+  // المستوى ونقاط الخبرة (XP) — مقصور على صف الطالب الحالي
+  const xp = xpScope();
+  const lvl = currentLevel(xp);
+  const nxt = nextLevelInfo(xp);
+  const lvlBadgeEl = document.getElementById('levelBadge');
+  if(lvlBadgeEl){
+    lvlBadgeEl.textContent = lvl.title.split(' ')[0];
+    document.getElementById('levelTitle').textContent = lvl.title.split(' ').slice(1).join(' ');
+    document.getElementById('levelXp').textContent = xp + ' XP';
+    document.getElementById('xpBarFill').style.width = (nxt ? nxt.pct : 100) + '%';
+    document.getElementById('xpNextLbl').textContent = nxt
+      ? `${nxt.remaining} XP كمان عشان توصل لمستوى ${nxt.title}`
+      : 'وصلت لأعلى مستوى — أسطورة! 👑';
+    const loyaltyEl = document.getElementById('loyaltyNote');
+    if(loyaltyEl) loyaltyEl.style.display = (STATE.currentGrade==='2bac' && hasLoyaltyBonus()) ? '' : 'none';
+  }
   const circ = 2*Math.PI*56;
   document.getElementById('profRing').setAttribute('stroke-dasharray', circ);
   document.getElementById('profRing').setAttribute('stroke-dashoffset', circ - (pct/100)*circ);
@@ -1572,6 +1658,9 @@ async function resetProgress(){
   STATE.quizCorrect = Math.max(0, (STATE.quizCorrect||0) - quizCorrectScope());
   if(!STATE.quizCorrectBy) STATE.quizCorrectBy = {'1sec':0,'2bac':0};
   STATE.quizCorrectBy[STATE.currentGrade] = 0;
+  if(!STATE.xpBy) STATE.xpBy = {'1sec':0,'2bac':0};
+  STATE.xpBy[STATE.currentGrade] = 0;
+  if(STATE.currentGrade==='2bac') STATE.loyaltyBonusGiven = false;
   await saveState();
   renderProfile(); refreshHome();
   showToast('تم إعادة ضبط التقدّم');
