@@ -434,6 +434,16 @@ body{
 .cert-teaser-meta p{margin:0; font-size:11px; color:var(--ink-dim);}
 .cert-teaser-arrow{font-size:20px; color:var(--ink-dim); flex:none;}
 
+/* ---------- المستوى ونقاط الخبرة (XP) ---------- */
+.level-row{display:flex; align-items:center; gap:12px;}
+.level-badge{font-size:30px; flex:none; width:52px; height:52px; border-radius:14px; background:var(--panel-2); display:flex; align-items:center; justify-content:center;}
+.level-meta{flex:1; min-width:0;}
+.level-meta h4{margin:0 0 3px; font-size:14.5px;}
+.level-meta p{margin:0; font-size:12px; color:var(--ink-dim); font-weight:700;}
+.xp-bar-track{margin-top:12px; height:10px; border-radius:6px; background:var(--panel-2); overflow:hidden;}
+.xp-bar-fill{height:100%; border-radius:6px; background:linear-gradient(90deg, var(--accent), var(--accent-4)); transition:width .4s;}
+.xp-next-lbl{margin:8px 0 0; font-size:11px; color:var(--ink-dim); text-align:center;}
+
 /* ---------- شاشة الشهادة ---------- */
 .cert-tier-switcher{display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:4px;}
 .cert-pill{
