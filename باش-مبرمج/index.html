@@ -52,6 +52,15 @@
       <div class="wa-banner-arrow">‹</div>
     </div>
 
+    <div class="card wa-banner" onclick="ZLAN.open()">
+      <div class="wa-banner-ic" style="background:rgba(124,156,255,.18);">👥</div>
+      <div class="wa-banner-meta">
+        <b>غرفة المذاكرة الجماعية — بدون إنترنت</b>
+        <span>تسابقوا وابعتوا لبعض الدروس وانتوا على نفس الواي فاي</span>
+      </div>
+      <div class="wa-banner-arrow">‹</div>
+    </div>
+
     <div id="grade1secContent">
       <div class="term-toggle">
         <button class="term-btn active" data-term="1" onclick="switchTerm(1)">📗 الترم الأول</button>
@@ -87,6 +96,8 @@
   </div>
 
   <!-- UNIT -->
+  <div class="screen" id="screen-lan"><div id="lanRoot"></div></div>
+
   <div class="screen" id="screen-unit">
     <div class="unit-hero" id="unitHeroBox"></div>
     <div class="lesson-list" id="lessonList"></div>
@@ -401,6 +412,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="js/certificates.js"></script>
 <script src="js/app.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/lan.js"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); });
