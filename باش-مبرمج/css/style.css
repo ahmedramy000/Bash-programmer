@@ -525,3 +525,21 @@ body{
 .theme-swatch.active{border-color:var(--accent);}
 .theme-swatch .dot{width:26px; height:26px; border-radius:50%; border:1px solid rgba(0,0,0,.15);}
 .theme-swatch .lb{font-size:11px; font-weight:700; color:var(--ink);}
+
+/* ===== غرفة المذاكرة الجماعية (lan.js) ===== */
+.lan-input{width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--line); background:var(--panel-2); color:var(--ink); font-family:'Tajawal'; font-size:13px;}
+.lan-code{width:100%; min-height:72px; padding:10px; border-radius:12px; border:1px solid var(--line); background:var(--panel-2); color:var(--ink); font-family:monospace; font-size:11px; direction:ltr; text-align:left; word-break:break-all; resize:vertical;}
+.lan-qr{display:block; margin:12px auto; width:min(300px,80vw); height:auto; border-radius:12px; background:#fff;}
+.lan-person{display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:12px; background:var(--panel-2); margin-bottom:6px; font-size:13px;}
+.lan-person b{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.lan-person em{font-style:normal; color:var(--ink-dim); font-size:11.5px;}
+.lan-person.me{border:1px solid var(--accent);}
+.lan-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.lan-steps{margin:8px 0 12px; padding-inline-start:20px; line-height:1.9; font-size:12.5px; color:var(--ink-dim);}
+.lan-check{display:block; padding:8px 4px; font-size:13px;}
+.lan-top{display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:var(--ink-dim);}
+.lan-timer{font-size:22px; font-weight:800; color:var(--accent);}
+.lan-timer.low{color:var(--accent-3);}
+.lan-scan{position:fixed; inset:0; z-index:999; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;}
+.lan-scan video{width:100%; max-height:75vh; object-fit:cover;}
+.lan-scan .btn{flex:none; padding:12px 34px;}
