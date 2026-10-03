@@ -97,6 +97,7 @@
 
   <!-- UNIT -->
   <div class="screen" id="screen-lan"><div id="lanRoot"></div></div>
+  <div class="screen" id="screen-sync"><div id="syncRoot"></div></div>
 
   <div class="screen" id="screen-unit">
     <div class="unit-hero" id="unitHeroBox"></div>
@@ -347,6 +348,9 @@
         <button class="btn btn-ghost" onclick="triggerImport()">📥 استيراد نسخة</button>
       </div>
       <input type="file" id="importFileInput" accept="application/json" style="display:none" onchange="importProgress(this)">
+      <div class="nav-btns" style="margin-top:8px;">
+        <button class="btn btn-ghost" onclick="ZSYNC.open()">🔄 مزامنة بين جهازيك</button>
+      </div>
     </div>
 
     <button class="reset-btn" onclick="resetProgress()">إعادة ضبط التقدّم</button>
@@ -411,9 +415,11 @@
 <script src="js/glossary.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="js/certificates.js"></script>
+<script src="js/crypto-backup.js"></script>
 <script src="js/app.js"></script>
 <script src="js/qr.js"></script>
 <script src="js/lan.js"></script>
+<script src="js/sync.js"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); });
