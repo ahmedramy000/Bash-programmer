@@ -251,8 +251,8 @@ function isRight(q, val){
   if(q.type === 'tf') return typeof val === 'boolean' && val === q.a;
   if(q.type === 'fill'){
     if(typeof val !== 'string') return false;
-    const ng = normAns(val.slice(0,200)), nc = normAns(q.answer||'');
-    return ng.length>0 && (ng === nc || ng.includes(nc) || (nc.includes(ng) && ng.length >= Math.max(2, Math.ceil(nc.length*0.6))));
+    const ng = normAns(val), nc = normAns(q.answer||'');
+    return ng.length>0 && ng === nc; // مطابقة كاملة بس (بعد تطبيع الهمزات والمسافات) — مفيش قبول جزئي
   }
   return false;
 }
@@ -327,7 +327,7 @@ function handleCStart(m){
 }
 function handleQ(m){
   const q = m.q||{};
-  R.cur = {i:m.i, total:m.total, secs:m.secs, q:{type:q.type, q:String(q.q||''), opts:(q.opts||[]).map(String)}, deadline:Date.now()+m.secs*1000, answered:false, chosen:null};
+  R.cur = {i:m.i, total:m.total, secs:m.secs, q:{type:q.type, q:String(q.q||''), opts:(q.opts||[]).map(String)}, deadline:Date.now()+m.secs*1000, answered:false, chosen:null, picked:null};
   ensureScreen(); go('q');
 }
 function answer(val){
@@ -336,7 +336,7 @@ function answer(val){
   if(R.role === 'host') onAns('host', {i:c.i, val}); else send(R.hostDC, {t:'ans', i:c.i, val});
   paintQ();
 }
-function answerFill(){ const el = $('lanFill'); if(el && el.value.trim()) answer(el.value.trim().slice(0,200)); }
+function answerFill(){ const el = $('lanFill'); if(el && el.value.trim()) answer(el.value.trim().slice(0,1000)); }
 function handleRev(m){
   const mine = (m.res||{})[R.myId || 'host'] || {};
   if(mine.ok) R.me.ok++;
@@ -554,9 +554,13 @@ const VIEWS = {
 function qBodyHTML(){
   const c = R.cur, q = c.q, done = c.answered;
   if(done) return `<div class="quiz-explain show" style="display:block;">✔ تم إرسال إجابتك — مستني باقي اللاعبين…</div>`;
-  if(q.type === 'mcq') return q.opts.map((o,i)=>`<button class="opt" onclick="ZLAN.ans(${i})">${safeHTML(o)}</button>`).join('');
-  if(q.type === 'tf') return `<button class="opt" onclick="ZLAN.ans(true)">✅ صح</button><button class="opt" onclick="ZLAN.ans(false)">❌ خطأ</button>`;
-  return `<div style="display:flex; gap:8px;"><input id="lanFill" class="lan-input" placeholder="اكتب إجابتك…" onkeydown="if(event.key==='Enter')ZLAN.fill()"><button class="btn btn-primary" style="flex:none; padding:11px 16px;" onclick="ZLAN.fill()">إرسال</button></div>`;
+  if(q.type === 'mcq' || q.type === 'tf'){
+    const opts = q.type === 'mcq' ? q.opts.map((o,i)=>[i,safeHTML(o)]) : [[true,'✅ صح'],[false,'❌ خطأ']];
+    const btns = opts.map(([v,label])=>`<button class="opt${c.picked===v?' selected':''}" onclick="ZLAN.pick(${JSON.stringify(v)})">${label}</button>`).join('');
+    const confirmBtn = `<button class="btn btn-primary" style="width:100%; margin-top:10px;" ${c.picked===null?'disabled':''} onclick="ZLAN.confirmPick()">تأكيد الإجابة ✓</button>`;
+    return btns + confirmBtn;
+  }
+  return `<div style="display:flex; gap:8px;"><input id="lanFill" class="lan-input" placeholder="اكتب إجابتك كاملة…" onkeydown="if(event.key==='Enter')ZLAN.fill()"><button class="btn btn-primary" style="flex:none; padding:11px 16px;" onclick="ZLAN.fill()">إرسال</button></div>`;
 }
 function paintQ(){ const el = $('lanQBody'); if(el && R.cur) el.innerHTML = qBodyHTML(); }
 function startTimer(){
@@ -660,7 +664,9 @@ window.ZLAN = {
   },
   openLesson(id){ go('lesson', id); },
   startContest(){ hostStartContest(+$('cUnit').value, +$('cCount').value, +$('cSecs').value); },
-  ans: answer, fill: answerFill, skip: skipNow
+  ans: answer, fill: answerFill, skip: skipNow,
+  pick(v){ if(R.cur && !R.cur.answered){ R.cur.picked = v; paintQ(); } },
+  confirmPick(){ if(R.cur && !R.cur.answered && R.cur.picked !== null) answer(R.cur.picked); }
 };
 
 // ============ الرابط العميق (فتح كود من كاميرا الموبايل العادية) ============

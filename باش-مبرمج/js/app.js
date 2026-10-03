@@ -1669,9 +1669,10 @@ async function resetProgress(){
 // ============ تصدير / استيراد التقدّم (نسخة احتياطية محلية) ============
 // هذا هو الضمان الحقيقي ضد فقدان التقدم عند مسح ذاكرة التخزين المؤقت للمتصفح بالخطأ،
 // لأن حفظ المتصفح وحده (localStorage/window.storage) قد لا يبقى بعد مسح الكاش.
-function exportProgress(){
+async function exportProgress(){
   try{
-    const data = JSON.stringify(STATE, null, 2);
+    if(!STATE.studentId){ showToast('لازم يكون عندك معرّف طالب الأول'); return; }
+    const data = await ZBK.encryptState(STATE);
     const blob = new Blob([data], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1679,8 +1680,8 @@ function exportProgress(){
     a.href = url; a.download = `علوم-البرمجة-تقدمي-${stamp}.json`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url), 2000);
-    showToast('تم تصدير نسخة احتياطية من تقدّمك 📤');
-  }catch(e){ showToast('تعذّر التصدير، حاول مرة أخرى'); }
+    showToast('تم تصدير نسخة احتياطية مُشفّرة من تقدّمك 📤');
+  }catch(e){ showToast((e && e.message) || 'تعذّر التصدير، حاول مرة أخرى'); }
 }
 function triggerImport(){ document.getElementById('importFileInput').click(); }
 function importProgress(fileInput){
@@ -1689,13 +1690,13 @@ function importProgress(fileInput){
   const reader = new FileReader();
   reader.onload = async (e)=>{
     try{
-      const parsed = JSON.parse(e.target.result);
+      const parsed = await ZBK.decryptFile(e.target.result);
       applyLoadedState(parsed);
       await saveState();
       refreshHome(); renderProfile();
       showToast('تم استيراد تقدّمك بنجاح ✅');
     }catch(err){
-      showToast('⚠️ ملف غير صالح، تأكد أنه ملف النسخة الاحتياطية الصحيح');
+      showToast('⚠️ ' + ((err && err.zbkCode) ? err.message : 'ملف غير صالح، تأكد أنه ملف النسخة الاحتياطية الصحيح'));
     }
     fileInput.value = '';
   };
@@ -2242,19 +2243,20 @@ function adminViewStudent(id){
   }catch(e){ showToast('تعذّرت قراءة بيانات هذا الطالب'); }
 }
 
-function adminExportStudent(id){
+async function adminExportStudent(id){
   let raw;
   try{ raw = localStorage.getItem(PROFILE_PREFIX + id); }catch(e){}
   if(!raw){ showToast('لا توجد بيانات لهذا الطالب'); return; }
   try{
-    const blob = new Blob([raw], {type:'application/json'});
+    const data = await ZBK.encryptState(JSON.parse(raw));
+    const blob = new Blob([data], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `تقدم-الطالب-${id}.json`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url), 2000);
     showToast('تم تصدير بيانات الطالب 📤');
-  }catch(e){ showToast('تعذّر التصدير'); }
+  }catch(e){ showToast((e && e.message) || 'تعذّر التصدير'); }
 }
 
 function adminDeleteStudent(id){
@@ -2272,16 +2274,15 @@ function adminImportStudent(fileInput){
   const file = fileInput.files && fileInput.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = (e)=>{
+  reader.onload = async (e)=>{
     try{
-      const parsed = JSON.parse(e.target.result);
-      if(!parsed.studentId){ parsed.studentId = generateStudentId(); }
+      const parsed = await ZBK.decryptFile(e.target.result);
       localStorage.setItem(PROFILE_PREFIX + parsed.studentId, JSON.stringify(parsed));
       updateRegistry(parsed.studentId, parsed.userName);
       renderAdminScreen();
       showToast(`تم استيراد بيانات الطالب (${parsed.userName || parsed.studentId}) بنجاح ✅`);
     }catch(err){
-      showToast('⚠️ ملف غير صالح، تأكد أنه ملف نسخة احتياطية صحيح');
+      showToast('⚠️ ' + ((err && err.zbkCode) ? err.message : 'ملف غير صالح، تأكد أنه ملف نسخة احتياطية صحيح'));
     }
     fileInput.value = '';
   };
